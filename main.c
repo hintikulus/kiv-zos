@@ -7,6 +7,7 @@
 #include "filesystem.h"
 #include "commands.h"
 #include "inode.h"
+#include "linkedlist.h"
 
 #define COMMAND_QUIT "exit"
 
@@ -38,6 +39,27 @@ int main(int argc, char** argv) {
     file_system_format(&fs, size);
     printf("Ukončeno formatovani\n");
 
+    linked_list *list = linked_list_create();
+    char *text = "Nazev";
+    linked_list_add(list, "text");
+    linked_list_add(list, "slozka");
+    linked_list_add(list, "dalsi_slozka");
+    linked_list_remove_last(list);
+    linked_list_add(list, "proboha");
+    linked_list_remove_last(list);
+
+    printf("Velikost listu: %d\n", list->size);
+    printf("Prvni: %s\n", list->first->name);
+
+    struct linked_list_item *item = list->first;
+
+    while(item->next) {
+        printf("%s/", item->name);
+        item = item->next;
+    }
+    printf("%s\n", item->name);
+    
+    linked_list_free(&list);
 
     while(1) {
         printf(">>> ");
@@ -78,6 +100,10 @@ int main(int argc, char** argv) {
         }
 
         printf("Příkaz: %s\n", cmd);
+
+        if(!strcmp(cmd, "exit")) {
+            break;
+        }
     }
 
     

@@ -9,7 +9,7 @@ file_system file_system_open(char *file_name) {
 
 int file_system_format(file_system *fs, int size) {
     int i;
-    char nula = '\0';
+    char *nula = '\0';
 
     printf("Formatuji\n");
 
