@@ -278,7 +278,7 @@ int set_file_datablock_position(file_system *fs, int32_t datablock_id) {
    return fseek(fs->file, fs->sb->data_start_address + (datablock_id - 1) * fs->sb->datablock_size, SEEK_SET);
 }
 
-int get_directory_item_inode(file_system *fs, int32_t parent, char* name) {
+int32_t get_directory_item_inode(file_system *fs, int32_t parent, char* name) {
    
    struct pseudo_inode parent_inode;
    int i;
