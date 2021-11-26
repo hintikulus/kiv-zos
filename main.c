@@ -12,35 +12,41 @@
 #define COMMAND_QUIT "exit"
 
 int main(int argc, char** argv) {
+    file_system *fs;
+    linked_list *list;
+    char *file_name;
+    int size;
+    struct superblock sb;
+    struct pseudo_inode inode;
+    char cmd[256] = { 0 };
+    struct linked_list_item *item;
 
     if(argc <= 1) {
         printf("Zadej parametr: Název souboru\n");
         return EXIT_SUCCESS;
     }
 
-    char *file_name = argv[1];
+    file_name = argv[1];
 
     printf("Hello there\n");
-    char cmd[256] = { 0 };
 
-    struct superblock sb;
     printf("%d\n", sizeof(sb));
 
-    struct pseudo_inode inode;
     printf("%d\n", sizeof(inode));
 
     
 
-    file_system fs = file_system_open(file_name);
+    fs = file_system_open(file_name);
 
-    int size = 10 * 1024 * 1024;
+    size = 10 * 1024 * 1024;
 
     printf("Volam formatovani\n");
-    file_system_format(&fs, size);
+    file_system_format(fs, size);
     printf("Ukončeno formatovani\n");
 
-    linked_list *list = linked_list_create();
-    char *text = "Nazev";
+    printf("##### %d ##### (2)\n", (fs)->sb->inode_start_address);
+    list = linked_list_create();
+
     linked_list_add(list, "text");
     linked_list_add(list, "slozka");
     linked_list_add(list, "dalsi_slozka");
@@ -51,7 +57,7 @@ int main(int argc, char** argv) {
     printf("Velikost listu: %d\n", list->size);
     printf("Prvni: %s\n", list->first->name);
 
-    struct linked_list_item *item = list->first;
+    item = list->first;
 
     while(item->next) {
         printf("%s/", item->name);
@@ -62,16 +68,22 @@ int main(int argc, char** argv) {
     linked_list_free(&list);
 
     while(1) {
+        char *command;
+        int input_size;
+        int argc;
+        int i;
+        fcmd handler;
+        char **argv;
+
         printf(">>> ");
         fgets(cmd, 256, stdin);
-        int input_size = strlen(cmd);
+        input_size = strlen(cmd);
         if(input_size <= 1) {
             continue;
         }
         cmd[input_size - 1] = '\000';
 
-        int argc = 0;
-        int i;
+        argc = 0;
 
         for(i = 0; i < input_size; i++) {
 
@@ -80,9 +92,13 @@ int main(int argc, char** argv) {
             }
         }
 
-        char* command = strtok(cmd, " ");
+        command = strtok(cmd, " ");
 
-        char *argv[argc];
+        argv = (char **) malloc(sizeof(char *) * argc);
+        if(!argv) {
+            continue;
+        }
+
         
         for(i = 0; i < argc; i++) {
             argv[i] = strtok(NULL, " ");
@@ -90,11 +106,11 @@ int main(int argc, char** argv) {
 
         printf("Ziskavam handler pro %s\n", command);
 
-        fcmd handler = get_handler(command);
+        handler = get_handler(command);
 
         if(handler) {
             printf("Mám handler\n");
-            handler(&fs, argc, argv);
+            handler(fs, argc, argv);
         } else {
             printf("Nemám handler\n");
         }
@@ -107,7 +123,7 @@ int main(int argc, char** argv) {
     }
 
     
-    file_system_close(&fs);
+    file_system_close(fs);
 
     return EXIT_SUCCESS;
 }

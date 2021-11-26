@@ -59,6 +59,7 @@ int linked_list_add(linked_list *ls, char *name) {
 
 int linked_list_add_to_start(linked_list *ls, char *name) {
 
+    return EXIT_SUCCESS;
 }
 
 int linked_list_remove_last(linked_list *ls) {
@@ -88,11 +89,10 @@ int linked_list_remove_last(linked_list *ls) {
     free(item->name);
     free(item);
 
-
+    return EXIT_SUCCESS;
 }
 
 int linked_list_free(linked_list **ls) {
-    int i;
     struct linked_list_item *item;
 
     if(!ls || !*ls) {
@@ -117,4 +117,5 @@ int linked_list_free(linked_list **ls) {
     free(item);
     free(*ls);
 
+    return EXIT_SUCCESS;
 }

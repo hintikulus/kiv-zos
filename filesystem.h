@@ -7,8 +7,9 @@
 #include <stdint.h>
 #include "structures.h"
 #include "inode.h"
+#include "linkedlist.h"
 
-file_system file_system_open(char *file_name);
+file_system *file_system_open(char *file_name);
 
 int file_system_format(file_system *fs, int size);
 

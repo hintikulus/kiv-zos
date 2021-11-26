@@ -1,40 +1,63 @@
 #include "filesystem.h"
 
-file_system file_system_open(char *file_name) {
+file_system *file_system_open(char *file_name) {
     
-    file_system FS = { file_name, fopen(file_name, "wb+") };
+    file_system *FS = (file_system *) malloc(sizeof(file_system)); 
+    
+    if(!FS) {
+        return NULL;
+    }
+
+    //{ file_name, fopen(file_name, "wb+") };
+
+    linked_list *path = linked_list_create();
+
+    if(!path) {
+        free(FS);
+        return NULL;
+    }
+
+    struct superblock *sb = (struct superblock *) malloc(sizeof(struct superblock));
+
+    if(!sb) {
+        free(FS);
+        return NULL;
+    }
+    
+    FS->file_name = file_name;
+    FS->file = fopen(file_name, "wb+");
+    FS->sb = sb;
+    FS->path = path;
 
     return FS;
 }
 
 int file_system_format(file_system *fs, int size) {
     int i;
-    char *nula = '\0';
+    char *nula = (char *) malloc(sizeof(char));
+    nula[0] = '\0';
 
     printf("Formatuji\n");
 
-    struct superblock sb = {};
-    fill_default_sb(&sb);
+    //struct superblock sb = {};
+    fill_default_sb(fs->sb);
 
     for(i = 0; i < size; i++) {
-        fwrite(&nula, sizeof(nula), 1, fs->file);
+        fwrite(nula, sizeof(nula), 1, fs->file);
     }
 
-    fill_superblock(&sb, size, 4*1024);
-
-    printf("Size konkr.:%d\n", sizeof(sb));
-    printf("Size obecny.:%d\n", sizeof(struct superblock));
+    fill_superblock(fs->sb, size, 4*1024);
 
     printf("Výsledky formátování: \n");
-    printf("Počet inodů: %d\n", (&sb)->inode_count);
-    printf("Počet dat.blocků: %d\n", (&sb)->datablock_count);
+    printf("Počet inodů: %d\n", fs->sb->inode_count);
+    printf("Počet dat.blocků: %d\n", fs->sb->datablock_count);
 
-    fs->sb = &sb;
-    write_superblock(fs, &sb);
+    //fs->sb = &sb;
+    write_superblock(fs, fs->sb);
     
 
-    int inode_bitmap_size = (&sb)->bitmap_start_address - (&sb)->bitmapi_start_address;
-    int data_bitmap_size = (&sb)->inode_start_address - (&sb)->bitmap_start_address;
+    int inode_bitmap_size = (fs->sb)->bitmap_start_address - (fs->sb)->bitmapi_start_address;
+    int data_bitmap_size = (fs->sb)->inode_start_address - (fs->sb)->bitmap_start_address;
 
     u_char inode_bitmap[inode_bitmap_size];
     u_char data_bitmap[data_bitmap_size];
@@ -64,6 +87,9 @@ int file_system_format(file_system *fs, int size) {
     create_directory(fs, 2, "hintik");
 
 
+
+    printf("##### %d ##### (1)\n", fs->sb->inode_start_address);
+    printf("##### %d ##### (3)\n", fs->sb->inode_start_address);
     //get_inode_by_path(fs, 1, "/file/obrazky/dovolena/");
     //get_inode_by_path(fs, 1, "file/obrazky/dovolena/");
     //get_inode_by_path(fs, 1, "/file/obrazky/dovolena");
@@ -89,6 +115,7 @@ int write_superblock(file_system *fs, struct superblock* sb) {
 }
 
 int file_system_close(file_system *fs) {
+    free(fs->sb);
     fclose(fs->file);
     return EXIT_SUCCESS;
 }

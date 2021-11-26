@@ -56,7 +56,7 @@ int get_free_inode_id(file_system *fs) {
    u_char inode_bitmap[fs->sb->bitmap_start_address - fs->sb->bitmapi_start_address];
    memset(inode_bitmap, '\0', sizeof(inode_bitmap));
    fseek(fs->file, fs->sb->bitmapi_start_address, SEEK_SET);
-   int size = fread(inode_bitmap, sizeof(inode_bitmap), 1, fs->file);
+   fread(inode_bitmap, sizeof(inode_bitmap), 1, fs->file);
 
    for (int i = 0 ; i < sizeof(inode_bitmap); i++) {
          for (int j=7; j>=0; j--) {
@@ -77,7 +77,7 @@ int get_free_datablock_id(file_system *fs) {
    u_char data_bitmap[fs->sb->inode_start_address - fs->sb->bitmap_start_address];
    memset(data_bitmap, '\0', sizeof(data_bitmap));
    fseek(fs->file, fs->sb->bitmap_start_address, SEEK_SET);
-   int size = fread(data_bitmap, sizeof(data_bitmap), 1, fs->file);
+   fread(data_bitmap, sizeof(data_bitmap), 1, fs->file);
 
    for (int i = 0 ; i < sizeof(data_bitmap); i++) {
          for (int j=7; j>=0; j--) {
@@ -102,6 +102,8 @@ int create_inode(file_system *fs) {
    }
 
    printf("Volný inode: %d\n", id);
+
+   return EXIT_SUCCESS;
 }
 
 int create_root_directory(file_system *fs) {
@@ -138,8 +140,7 @@ int create_root_directory(file_system *fs) {
    struct directory_item di_up = {inode_id, ".."};
    fwrite(&di_up, sizeof(struct directory_item), 1, fs->file);
 
-
-   
+   return EXIT_SUCCESS;
 }
 
 int create_directory(file_system *fs, int32_t parent, char *name) {
@@ -165,10 +166,6 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
       printf("Zadany soubor neni slozka\n");
       return EXIT_FAILURE;
    }
-
-
-   int item_count = fs->sb->datablock_size/sizeof(struct directory_item);
-   struct directory_item items[item_count];
 
    for(i = 0; i < DIRECT_LINKS_COUNT; i++) {
       if((&parent_inode)->direct[i] != 0) {
@@ -232,6 +229,7 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
    fseek(fs->file, free_directory_item * sizeof(struct directory_item), SEEK_CUR);
    fwrite(&item, sizeof(struct directory_item), 1, fs->file);
 
+   return EXIT_SUCCESS;
 }
 
 int find_free_directory_item_in_datablock(file_system *fs, int32_t datablock) {
@@ -276,9 +274,11 @@ int create_datablock(file_system *fs) {
    }
 
    printf("Volný blok: %d\n", id);
+   return EXIT_SUCCESS;
 }
 
 int set_file_inode_position(file_system *fs, int32_t inode_id) {
+   printf("# SB| ISA: %d | sizeof(inode): %d\n", fs->sb->inode_start_address, sizeof(struct pseudo_inode));
    printf("Skáču na inode (%d) pozici: %d\n", inode_id, fs->sb->inode_start_address + (inode_id - 1) * sizeof(struct pseudo_inode));
    return fseek(fs->file, fs->sb->inode_start_address + (inode_id - 1) * sizeof(struct pseudo_inode), SEEK_SET);
 }
@@ -299,6 +299,7 @@ int32_t get_directory_item_inode(file_system *fs, int32_t parent, char* name) {
 
    for(i = 0; i < DIRECT_LINKS_COUNT; i++) {
       inode_number = find_directory_item_in_datablock(fs, (&parent_inode)->direct[i], name);
+      printf("Nalezeno v datablocku: %d inode %d\n", i, inode_number);
 
       if(inode_number != 0) {
          return inode_number;
@@ -337,20 +338,23 @@ int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path) {
 
    char *folder = strtok(path, "/");
 
-   printf("Projdu přes složky: \n");
+   printf("Projdu (%d) přes složky: \n", parent);
    while(folder != NULL) {
-      printf("%s\n", folder);
       parent = get_directory_item_inode(fs, parent, folder);
+      printf("%s - %d\n", folder, parent);
       folder = strtok(NULL, "/");
    }
-   printf("Toť vše.\n");
+   printf("Toť vše. %d, %s \n", parent, path);
    return parent;
 }
 
 int free_inode(file_system *fs, int32_t inode_id) {
 
+   return EXIT_SUCCESS;
+
 }
 
 int free_datablock(file_system *fs, int32_t datablock_id) {
 
+   return EXIT_SUCCESS;
 }

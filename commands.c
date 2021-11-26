@@ -41,16 +41,19 @@ fcmd get_handler(char command[]) {
 int cp(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int mv(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int rm(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int mkdir(file_system *fs, int argc, char **argv) {
@@ -87,8 +90,9 @@ int mkdir(file_system *fs, int argc, char **argv) {
     printf("co treba tady?\n");
 
     char folder_name[path_length-i];
+    printf("%d\n", path_length-i);
     strncpy(folder_name, &(full_path[i]), path_length-i);
-    ///folder_name[path_length-i+1] = '\0';
+    folder_name[path_length-i] = '\0';
 
     if(folder_name[path_length-i-1] == '/') {
         folder_name[path_length-i-1] = '\0';
@@ -98,13 +102,14 @@ int mkdir(file_system *fs, int argc, char **argv) {
     for(i = 0; i < n; i++) {
         printf("%d ", folder_name[i]);
     }
+    printf("\n");
 
     //int path_inode = get_inode_by_path()
 
     int32_t folder_node = get_inode_by_path(fs, 1, parent_path);
     printf("Cesta odkazuje na inode: %d\n", folder_node);
-    //create_directory(fs, folder_node, folder_name);
-    create_directory(fs, 1, "home");
+    create_directory(fs, folder_node, folder_name);
+    //create_directory(fs, 1, "home");
 
     printf("\n");
 
@@ -115,52 +120,61 @@ int mkdir(file_system *fs, int argc, char **argv) {
     printf("Vytvoř slozku %s\n", argv[0]);
 
 
-
+    return EXIT_SUCCESS;
 }
 
 int rmdir(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int ls(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int cat(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int cd(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int pwd(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int info(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int incp(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int outcp(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int load(file_system *fs, int argc, char **argv) {
 
 
+    return EXIT_SUCCESS;
 }
 
 int format(file_system *fs, int argc, char **argv) {
