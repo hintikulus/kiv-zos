@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 
         if(handler) {
             printf("Mám handler\n");
-            handler(argc, argv);
+            handler(&fs, argc, argv);
         } else {
             printf("Nemám handler\n");
         }

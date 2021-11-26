@@ -322,7 +322,7 @@ int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path) {
       files_count--;
    }
 
-   printf("Projdu přes %d inodů\n", files_count);
+   printf("\nProjdu přes %d inodů\n", files_count);
 
 }
 

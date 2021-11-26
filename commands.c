@@ -38,22 +38,22 @@ fcmd get_handler(char command[]) {
     return NULL;
 }
 
-int cp(int argc, char **argv) {
+int cp(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int mv(int argc, char **argv) {
+int mv(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int rm(int argc, char **argv) {
+int rm(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int mkdir(int argc, char **argv) {
+int mkdir(file_system *fs, int argc, char **argv) {
     if(argc < 1) {
         printf("Zadej parametr\n");
         return EXIT_FAILURE;
@@ -93,6 +93,9 @@ int mkdir(int argc, char **argv) {
 
     //int path_inode = get_inode_by_path()
 
+    int32_t folder_node = get_inode_by_path(fs, 1, parent_path);
+    
+    
     printf("\n");
 
     printf("Rodicovska slozka: %s\n", parent_path);
@@ -103,58 +106,58 @@ int mkdir(int argc, char **argv) {
 
 }
 
-int rmdir(int argc, char **argv) {
+int rmdir(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int ls(int argc, char **argv) {
+int ls(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int cat(int argc, char **argv) {
+int cat(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int cd(int argc, char **argv) {
+int cd(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int pwd(int argc, char **argv) {
+int pwd(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int info(int argc, char **argv) {
+int info(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int incp(int argc, char **argv) {
+int incp(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int outcp(int argc, char **argv) {
+int outcp(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int load(int argc, char **argv) {
+int load(file_system *fs, int argc, char **argv) {
 
 
 }
 
-int format(int argc, char **argv) {
+int format(file_system *fs, int argc, char **argv) {
     printf("Formatuji :-)\n");
 
     return EXIT_SUCCESS;
 }
 
-int ln(int argc, char **argv) {
+int ln(file_system *fs, int argc, char **argv) {
 
     return EXIT_SUCCESS;
 }
