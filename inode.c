@@ -143,6 +143,10 @@ int create_root_directory(file_system *fs) {
 }
 
 int create_directory(file_system *fs, int32_t parent, char *name) {
+   if(parent < 1) {
+      printf("Neplatna cesta");
+      return EXIT_FAILURE;
+   }
    printf("Pokousim se vytvorit slozku s nazvem %s\n", name);
    struct pseudo_inode parent_inode;
    int i;
@@ -150,7 +154,11 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
    printf("tady 00\n");
    set_file_inode_position(fs, parent);
    fread(&parent_inode, sizeof(struct pseudo_inode), 1, fs->file);
-   
+
+   printf("%d\n", parent);
+   printf("%d, %d, %d\n", (&parent_inode)->isDirectory, (&parent_inode)->nodeid, (&parent_inode)->direct[0]);
+   printf("Nazev: %s\n", fs->file_name);
+
    bool isD = (&parent_inode)->isDirectory;
 
    if(!isD) {
@@ -271,10 +279,12 @@ int create_datablock(file_system *fs) {
 }
 
 int set_file_inode_position(file_system *fs, int32_t inode_id) {
+   printf("Skáču na inode (%d) pozici: %d\n", inode_id, fs->sb->inode_start_address + (inode_id - 1) * sizeof(struct pseudo_inode));
    return fseek(fs->file, fs->sb->inode_start_address + (inode_id - 1) * sizeof(struct pseudo_inode), SEEK_SET);
 }
 
 int set_file_datablock_position(file_system *fs, int32_t datablock_id) {
+   printf("Skáču na data pozici: %d\n", fs->sb->data_start_address + (datablock_id - 1) * fs->sb->datablock_size);
    return fseek(fs->file, fs->sb->data_start_address + (datablock_id - 1) * fs->sb->datablock_size, SEEK_SET);
 }
 
@@ -300,13 +310,14 @@ int32_t get_directory_item_inode(file_system *fs, int32_t parent, char* name) {
 }
 
 int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path) {
+   printf("Počítám počet prochazejicich inodu.\n");
 
    if(strlen(path) == 0) {
-      return 0;
+      return parent;
    }
 
    int length = 0;
-   int files_count = 0;
+   int files_count = 1;
 
    while(path[length] != '\0') {
       if(path[length] == '/') files_count++;
@@ -324,6 +335,16 @@ int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path) {
 
    printf("\nProjdu přes %d inodů\n", files_count);
 
+   char *folder = strtok(path, "/");
+
+   printf("Projdu přes složky: \n");
+   while(folder != NULL) {
+      printf("%s\n", folder);
+      parent = get_directory_item_inode(fs, parent, folder);
+      folder = strtok(NULL, "/");
+   }
+   printf("Toť vše.\n");
+   return parent;
 }
 
 int free_inode(file_system *fs, int32_t inode_id) {

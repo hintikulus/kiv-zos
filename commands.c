@@ -74,12 +74,20 @@ int mkdir(file_system *fs, int argc, char **argv) {
         }
     }
 
+    i++;
+
+    printf("Po cyklu.\n");
+
+    printf("i: %d\n", i);
+
     char parent_path[i+1];
     strncpy(parent_path, full_path, i);
     parent_path[i] = '\0';
 
+    printf("co treba tady?\n");
+
     char folder_name[path_length-i];
-    strncpy(folder_name, &(full_path[i+1]), path_length-i);
+    strncpy(folder_name, &(full_path[i]), path_length-i);
     ///folder_name[path_length-i+1] = '\0';
 
     if(folder_name[path_length-i-1] == '/') {
@@ -94,9 +102,13 @@ int mkdir(file_system *fs, int argc, char **argv) {
     //int path_inode = get_inode_by_path()
 
     int32_t folder_node = get_inode_by_path(fs, 1, parent_path);
-    
-    
+    printf("Cesta odkazuje na inode: %d\n", folder_node);
+    //create_directory(fs, folder_node, folder_name);
+    create_directory(fs, 1, "home");
+
     printf("\n");
+
+    printf("Vypis:\n");
 
     printf("Rodicovska slozka: %s\n", parent_path);
     printf("Nazev slozky: %s\n", folder_name);

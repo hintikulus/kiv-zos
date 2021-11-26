@@ -55,7 +55,7 @@ int file_system_format(file_system *fs, int size) {
     create_root_directory(fs);
 
     printf("Tak tady?\n");
-    create_directory(fs, 1, "home");
+    create_directory(fs, 1, "homes");
     create_directory(fs, 1, "etc");
     create_directory(fs, 1, "var");
     create_directory(fs, 2, "hintik");
