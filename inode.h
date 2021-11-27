@@ -20,6 +20,7 @@
 #include "filesystem.h"
 
 #define DIRECT_LINKS_COUNT 5
+#define INDIRECT_LINKS_COUNT 2
 
 struct superblock {
     char signature[9];              /*login autora FS*/
@@ -45,8 +46,9 @@ struct pseudo_inode {
     /*int32_t direct3; */              /* 3. přímý odkaz na datové bloky*/
     /*int32_t direct4; */               /* 4. přímý odkaz na datové bloky*/
     /*int32_t direct5; */             /* 5. přímý odkaz na datové bloky*/
-    int32_t indirect1;              /* 1. nepřímý odkaz (odkaz - datové bloky)*/
-    int32_t indirect2;              /* 2. nepřímý odkaz (odkaz - odkaz - datové bloky)*/
+    int32_t indirect[INDIRECT_LINKS_COUNT];
+    /* int32_t indirect1; */             /* 1. nepřímý odkaz (odkaz - datové bloky)*/
+    /* int32_t indirect2; */              /* 2. nepřímý odkaz (odkaz - odkaz - datové bloky)*/
 };
 
 

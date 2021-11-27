@@ -123,11 +123,12 @@ int create_root_directory(file_system *fs) {
    (&inode)->direct[0] = data_id;
 
    for(i = 1; i < DIRECT_LINKS_COUNT; i++) {
-      (&inode)->direct[i] = 0;
+      inode.direct[i] = 0;
    }
 
-   (&inode)->indirect1 = 0;
-   (&inode)->indirect2 = 0;
+   for(i = 1; i < INDIRECT_LINKS_COUNT; i++) {
+      inode.indirect[i] = 0;
+   }
 
    set_file_inode_position(fs, inode_id);
    fwrite(&inode, sizeof(inode), 1, fs->file);
@@ -160,6 +161,7 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
       return EXIT_FAILURE;
    }
 
+   
    for(i = 0; i < DIRECT_LINKS_COUNT; i++) {
       if((&parent_inode)->direct[i] != 0) {
          if(find_directory_item_in_datablock(fs, (&parent_inode)->direct[i], name) != 0) {
@@ -168,6 +170,14 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
          }
 
       }
+   }
+
+   for(i = 0; i < INDIRECT_LINKS_COUNT; i++) {
+      if(parent_inode.indirect[i] == 0) {
+         continue;
+      }
+
+
    }
 
    for(i = 0; i < DIRECT_LINKS_COUNT; i++) {
@@ -196,8 +206,8 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
    (&inode)->direct[2] = 0;
    (&inode)->direct[3] = 0;
    (&inode)->direct[4] = 0;
-   (&inode)->indirect1 = 0;
-   (&inode)->indirect2 = 0;
+   inode.indirect[0] = 0;
+   inode.indirect[1] = 0;
 
 
    set_file_inode_position(fs, inode_id);
@@ -251,6 +261,54 @@ int find_directory_item_in_datablock(file_system *fs, int32_t datablock, char *n
    }
 
    return 0;
+
+}
+
+int32_t find_file_in_folder(file_system *fs, int32_t folder, char *name) {
+   struct pseudo_inode parent_inode;
+   int i, j, k;
+   int32_t found_id, link;
+   int count = fs->sb->datablock_size / sizeof(int32_t);
+
+   set_file_inode_position(fs, folder);
+   fread(&parent_inode, sizeof(struct pseudo_inode), 1, fs->file);
+
+   for(i = 0; i < DIRECT_LINKS_COUNT; i++) {
+      if((&parent_inode)->direct[i] != 0) {
+         found_id = find_directory_item_in_datablock(fs, parent_inode.direct[i], name);
+         if(found_id != 0) {
+            return found_id;
+         }
+
+      }
+   }
+   
+      int32_t datablock[INDIRECT_LINKS_COUNT][count];
+
+   for(i = 0; i < INDIRECT_LINKS_COUNT; i++) {
+
+      if(parent_inode.indirect[i] == 0) {
+         continue;
+      }
+
+      link = parent_inode.indirect[i];
+
+      for(j = 0; j < i; j++) {
+         set_file_datablock_position(fs, link);
+         fread(datablock[i], fs->sb->datablock_size, 1, fs->file);
+
+         
+      }
+
+      
+
+      set_file_datablock_position(fs, link);
+      fread(datablock, fs->sb->datablock_size, 1, fs->file);
+      for(k = 0; k < count; k++) {
+         found_id = find_directory_item_in_datablock(fs, datablock[i][k], name);
+      }
+
+   }
 
 }
 
