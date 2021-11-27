@@ -37,7 +37,7 @@ int file_system_format(file_system *fs, int size) {
     char *nula = (char *) malloc(sizeof(char));
     nula[0] = '\0';
 
-    printf("Formatuji %d\n", sizeof(*nula));
+    printf("Formatuji %ld\n", sizeof(*nula));
 
     //struct superblock sb = {};
     //fill_default_sb(fs->sb);
@@ -67,7 +67,7 @@ int file_system_format(file_system *fs, int size) {
     memset(inode_bitmap, '\0', inode_bitmap_size);
     memset(data_bitmap, '\0', data_bitmap_size);
 
-    printf("Velikost: %d\n", sizeof(inode_bitmap));
+    printf("Velikost: %ld\n", sizeof(inode_bitmap));
 
     printf("zapisuji bitmapy\n");
     fwrite(&inode_bitmap, sizeof(u_char), inode_bitmap_size, fs->file);
@@ -112,7 +112,7 @@ int write_superblock(file_system *fs, struct superblock *sb) {
     
     fseek(fs->file, 0, SEEK_SET);
 
-    printf("Size:%d\n", sizeof(*sb));
+    printf("Size:%ld\n", sizeof(*sb));
     fwrite(sb, sizeof(*sb), 1, fs->file);
 
     return EXIT_SUCCESS;

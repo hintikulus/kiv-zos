@@ -65,14 +65,15 @@ int mkdir(file_system *fs, int argc, char **argv) {
     char *full_path = argv[0];
     int path_length = strlen(full_path);
     int i = path_length - 1;
+    int j;
 
     if(full_path[path_length-1] == '/') {
         i--;
         path_length--;
     }
 
-    for(i; i >= 0; i--) {
-        if(full_path[i] == '/') {
+    for(j = i; j >= 0; j--) {
+        if(full_path[j] == '/') {
             break;
         }
     }

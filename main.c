@@ -30,9 +30,9 @@ int main(int argc, char** argv) {
 
     printf("Hello there\n");
 
-    printf("%d\n", sizeof(sb));
+    printf("%ld\n", sizeof(sb));
 
-    printf("%d\n", sizeof(inode));
+    printf("%ld\n", sizeof(inode));
 
     
 
