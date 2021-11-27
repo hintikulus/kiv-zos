@@ -78,21 +78,22 @@ int mkdir(file_system *fs, int argc, char **argv) {
         }
     }
 
-    i++;
+    j++;
 
-    char parent_path[i+1];
-    strncpy(parent_path, full_path, i);
-    parent_path[i] = '\0';
+    char parent_path[j+1];
+    strncpy(parent_path, full_path, j);
+    parent_path[j] = '\0';
 
-    char folder_name[path_length-i+1];
-    strncpy(folder_name, &(full_path[i]), path_length-i);
-    folder_name[path_length-i] = '\0';
+    char folder_name[path_length-j+1];
+    strncpy(folder_name, &(full_path[j]), path_length-j);
+    folder_name[path_length-j] = '\0';
 
     int32_t folder_node = get_inode_by_path(fs, fs->current_folder, parent_path);
     create_directory(fs, folder_node, folder_name);
     //create_directory(fs, 1, "home");
 
     fflush(fs->file);
+    printf("OK\n");
 
     return EXIT_SUCCESS;
 }
