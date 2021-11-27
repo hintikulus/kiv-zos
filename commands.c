@@ -89,13 +89,15 @@ int mkdir(file_system *fs, int argc, char **argv) {
     folder_name[path_length-j] = '\0';
 
     int32_t folder_node = get_inode_by_path(fs, fs->current_folder, parent_path);
-    create_directory(fs, folder_node, folder_name);
+    if(create_directory(fs, folder_node, folder_name) == EXIT_SUCCESS) {
+        fflush(fs->file);
+        printf("OK\n");
+        return EXIT_SUCCESS;
+    }
     //create_directory(fs, 1, "home");
 
-    fflush(fs->file);
-    printf("OK\n");
 
-    return EXIT_SUCCESS;
+    return EXIT_FAILURE;
 }
 
 int rmdir(file_system *fs, int argc, char **argv) {
@@ -156,7 +158,8 @@ int cd(file_system *fs, int argc, char **argv) {
     char *folder = strtok(argv[0], "/");
 
     while(folder != NULL) {
-        parent = get_directory_item_inode(fs, parent, folder);
+        //parent = get_directory_item_inode(fs, parent, folder);
+        parent = find_file_in_folder(fs, parent, folder);
         //printf("%s - %d\n", folder, parent);
 
         if(parent == 0) {
@@ -169,7 +172,6 @@ int cd(file_system *fs, int argc, char **argv) {
             return EXIT_FAILURE;
         } else {
             if(!strcmp(folder, ".")) {
-                folder = strtok(NULL, "/");
             } else if(!strcmp(folder, "..")) {
                 linked_list_remove_last(path);
                 counter--;

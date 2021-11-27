@@ -78,6 +78,9 @@ int create_root_directory(file_system *fs);
 
 int create_directory(file_system *fs, int32_t parent, char *name);
 int find_free_directory_item_in_datablock(file_system *fs, int32_t datablock);
+
+int find_free_directory_item_in_folder(file_system *fs, int32_t folder, int32_t *datablock_number);
+
 int set_file_inode_position(file_system *fs, int32_t inode_id);
 int set_file_datablock_position(file_system *fs, int32_t datablock_id);
 int find_directory_item_in_datablock(file_system *fs, int32_t datablock, char *name);
@@ -89,4 +92,6 @@ int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path);
 int free_inode(file_system *fs, int32_t inode_id);
 
 int free_datablock(file_system *fs, int32_t datablock_id);
+
+int32_t find_file_in_folder(file_system *fs, int32_t folder, char *name);
 #endif

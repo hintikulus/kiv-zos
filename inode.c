@@ -149,10 +149,13 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
    }
 
    struct pseudo_inode parent_inode;
-   int i;
-   int free_directory_item, free_directory_item_block;
+   //int i;
+   int32_t free_directory_item, free_directory_item_block;
+   int32_t inode_id;
    set_file_inode_position(fs, parent);
    fread(&parent_inode, sizeof(struct pseudo_inode), 1, fs->file);
+   free_directory_item_block = 0;
+   free_directory_item = 0;
 
    bool isD = (&parent_inode)->isDirectory;
 
@@ -162,34 +165,31 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
    }
 
    
-   for(i = 0; i < DIRECT_LINKS_COUNT; i++) {
-      if((&parent_inode)->direct[i] != 0) {
-         if(find_directory_item_in_datablock(fs, (&parent_inode)->direct[i], name) != 0) {
-            printf("Soubor s takovym nazvem jiz existuje.\n");
-            return EXIT_FAILURE;
-         }
-
-      }
+   inode_id = find_file_in_folder(fs, parent, name);
+   if(inode_id != 0) {
+      printf("Soubor s takovym nazvem jiz existuje.\n");
+      return EXIT_FAILURE;
    }
 
-   for(i = 0; i < INDIRECT_LINKS_COUNT; i++) {
-      if(parent_inode.indirect[i] == 0) {
-         continue;
-      }
+   free_directory_item = find_free_directory_item_in_folder(fs, parent, &free_directory_item_block);
 
-
+   if(free_directory_item == 0 || free_directory_item_block == 0) {
+      printf("Není místo");
+      return EXIT_FAILURE;
    }
 
+   /*
    for(i = 0; i < DIRECT_LINKS_COUNT; i++) {
+
       if((free_directory_item = find_free_directory_item_in_datablock(
          fs, (&parent_inode)->direct[i])) != 0) {
             free_directory_item_block = i;
             break;
       }
       
-   } 
+   } */
 
-   int32_t inode_id = get_free_inode_id(fs);
+   inode_id = get_free_inode_id(fs);
    int32_t data_id = get_free_datablock_id(fs);
 
    if(inode_id == 0 || data_id == 0) {
@@ -224,11 +224,92 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
    (&item)->inode = inode_id;
    strcpy((&item)->item_name, name);
    
-   set_file_datablock_position(fs, (&parent_inode)->direct[free_directory_item_block]);
+   set_file_datablock_position(fs, free_directory_item_block);
    fseek(fs->file, free_directory_item * sizeof(struct directory_item), SEEK_CUR);
    fwrite(&item, sizeof(struct directory_item), 1, fs->file);
 
    return EXIT_SUCCESS;
+}
+
+
+int find_free_directory_item_in_folder(file_system *fs, int32_t folder, int32_t *datablock_number) {
+   int i, j, k;
+   int32_t link, found_id;
+   struct pseudo_inode parent_inode;
+   int count = fs->sb->datablock_size / sizeof(int32_t);
+   //int32_t items_in_block = (fs->sb->datablock_size / sizeof(struct directory_item));
+
+   set_file_inode_position(fs, folder);
+   fread(&parent_inode, sizeof(struct pseudo_inode), 1, fs->file);
+
+   for(i = 0; i < DIRECT_LINKS_COUNT; i++) {
+      if((&parent_inode)->direct[i] != 0) {
+         found_id = find_free_directory_item_in_datablock(fs, parent_inode.direct[i]);
+         if(found_id != 0) {
+            
+            *datablock_number = parent_inode.direct[i];
+            return found_id;
+         }
+
+      }
+   }
+   
+   /*
+      Procházení nepřímých odkazů
+
+      1. - datablock - slozka
+      2. - datablock - datablock - slozka
+   */
+
+   int32_t datablock[INDIRECT_LINKS_COUNT][count];
+
+   link = parent_inode.indirect[0];
+
+   if(link != 0) {
+      set_file_datablock_position(fs, link);
+      fread(datablock[0], fs->sb->datablock_size, 1, fs->file);
+
+      for(k = 0; k < count; k++) {
+         link = datablock[0][k];
+         found_id = find_free_directory_item_in_datablock(fs, link);
+         if(found_id != 0) {
+            
+            printf("To není možné\n");
+            *datablock_number = link;
+            return found_id;
+         }
+      }
+   }
+
+   link = parent_inode.indirect[1];
+   if(link != 0) {
+      set_file_datablock_position(fs, link);
+      fread(datablock[0], fs->sb->datablock_size, 1, fs->file);
+
+      for(k = 0; k < count; k++) {
+         link = datablock[0][k];
+         if(link != 0) {
+            set_file_datablock_position(fs, link);
+            fread(datablock[1], fs->sb->datablock_size, 1, fs->file);
+
+            for(j = 0; j < count; j++) {
+               link = datablock[1][j];
+               if(link != 0) {
+                  found_id = find_free_directory_item_in_datablock(fs, link); 
+                  if(found_id != 0) {
+                     printf("To není možné\n");
+                     *datablock_number = link;
+                     return found_id;
+                  }
+               }
+            }
+         }
+
+      }
+   }
+
+   printf("To není možné\n");
+   return 0;
 }
 
 int find_free_directory_item_in_datablock(file_system *fs, int32_t datablock) {
@@ -283,32 +364,56 @@ int32_t find_file_in_folder(file_system *fs, int32_t folder, char *name) {
       }
    }
    
-      int32_t datablock[INDIRECT_LINKS_COUNT][count];
+   /*
+      Procházení nepřímých odkazů
 
-   for(i = 0; i < INDIRECT_LINKS_COUNT; i++) {
+      1. - datablock - slozka
+      2. - datablock - datablock - slozka
+   */
 
-      if(parent_inode.indirect[i] == 0) {
-         continue;
-      }
+   int32_t datablock[INDIRECT_LINKS_COUNT][count];
 
-      link = parent_inode.indirect[i];
+   link = parent_inode.indirect[0];
 
-      for(j = 0; j < i; j++) {
-         set_file_datablock_position(fs, link);
-         fread(datablock[i], fs->sb->datablock_size, 1, fs->file);
-
-         
-      }
-
-      
-
+   if(link != 0) {
       set_file_datablock_position(fs, link);
-      fread(datablock, fs->sb->datablock_size, 1, fs->file);
-      for(k = 0; k < count; k++) {
-         found_id = find_directory_item_in_datablock(fs, datablock[i][k], name);
-      }
+      fread(datablock[0], fs->sb->datablock_size, 1, fs->file);
 
+      for(k = 0; k < count; k++) {
+         link = datablock[0][k];
+         found_id = find_directory_item_in_datablock(fs, link, name);
+         if(found_id != 0) {
+            return found_id;
+         }
+      }
    }
+
+   link = parent_inode.indirect[1];
+   if(link != 0) {
+      set_file_datablock_position(fs, link);
+      fread(datablock[0], fs->sb->datablock_size, 1, fs->file);
+
+      for(k = 0; k < count; k++) {
+         link = datablock[0][k];
+         if(link != 0) {
+            set_file_datablock_position(fs, link);
+            fread(datablock[1], fs->sb->datablock_size, 1, fs->file);
+
+            for(j = 0; j < count; j++) {
+               link = datablock[1][j];
+               if(link != 0) {
+                  found_id = find_directory_item_in_datablock(fs, link, name); 
+                  if(found_id != 0) {
+                     return found_id;
+                  }
+               }
+            }
+         }
+
+      }
+   }
+
+   return 0;
 
 }
 
@@ -329,31 +434,6 @@ int set_file_inode_position(file_system *fs, int32_t inode_id) {
 
 int set_file_datablock_position(file_system *fs, int32_t datablock_id) {
    return fseek(fs->file, fs->sb->data_start_address + (datablock_id - 1) * fs->sb->datablock_size, SEEK_SET);
-}
-
-int32_t get_directory_item_inode(file_system *fs, int32_t parent, char* name) {
-   
-   struct pseudo_inode parent_inode;
-   int i;
-   int32_t inode_number;
-
-   set_file_inode_position(fs, parent);
-   fread(&parent_inode, sizeof(struct pseudo_inode), 1, fs->file);
-
-   if(!parent_inode.isDirectory) {
-      return 0;
-   }
-
-   for(i = 0; i < DIRECT_LINKS_COUNT; i++) {
-      inode_number = find_directory_item_in_datablock(fs, (&parent_inode)->direct[i], name);
-
-      if(inode_number != 0) {
-         return inode_number;
-      }
-   }
-
-   return 0;
-
 }
 
 int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path) {
@@ -384,7 +464,9 @@ int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path) {
    char *folder = strtok(path, "/");
 
    while(folder != NULL) {
-      parent = get_directory_item_inode(fs, parent, folder);
+      //parent = get_directory_item_inode(fs, parent, folder);
+      parent =  find_file_in_folder(fs, parent, folder);
+
       //printf("%s - %d\n", folder, parent);
       if(parent == 0) {
          printf("Chyba! - %s není složka!\n", parent_name);

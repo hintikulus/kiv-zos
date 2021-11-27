@@ -99,6 +99,10 @@ int file_system_format(file_system *fs, int size) {
 
     fflush(fs->file);
 
+    printf("Velikost directory_item: %d\n", sizeof(struct directory_item));
+    printf("Velikost dat. bloku: %d\n", fs->sb->datablock_size);
+    printf("Velikost pocet itemů v dat. bloku: %d\n", fs->sb->datablock_size/sizeof(struct directory_item));
+
     return EXIT_SUCCESS;
 }
 
