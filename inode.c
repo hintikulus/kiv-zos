@@ -17,6 +17,8 @@ void fill_default_sb(struct superblock *sb) {
 }
 
 void fill_superblock(struct superblock *sb, int32_t size, int32_t datablock_size) {
+   memset(sb, 0, sizeof(struct superblock));
+
    strcpy(sb->signature, "hintik");
    strcpy(sb->volume_descriptor, "Semestralni prace KIV/ZOS");
    sb->disk_size = size;
@@ -101,8 +103,6 @@ int create_inode(file_system *fs) {
       return EXIT_FAILURE;
    }
 
-   printf("Volný inode: %d\n", id);
-
    return EXIT_SUCCESS;
 }
 
@@ -110,8 +110,6 @@ int create_root_directory(file_system *fs) {
    int i;
    int inode_id = get_free_inode_id(fs);
    int data_id = get_free_datablock_id(fs);
-
-   printf("Data: %d\n", inode_id);
 
    if(inode_id == 0 || data_id == 0) {
       return EXIT_FAILURE;
@@ -148,17 +146,12 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
       printf("Neplatna cesta");
       return EXIT_FAILURE;
    }
-   printf("Pokousim se vytvorit slozku s nazvem %s\n", name);
+
    struct pseudo_inode parent_inode;
    int i;
    int free_directory_item, free_directory_item_block;
-   printf("tady 00\n");
    set_file_inode_position(fs, parent);
    fread(&parent_inode, sizeof(struct pseudo_inode), 1, fs->file);
-
-   printf("%d\n", parent);
-   printf("%d, %d, %d\n", (&parent_inode)->isDirectory, (&parent_inode)->nodeid, (&parent_inode)->direct[0]);
-   printf("Nazev: %s\n", fs->file_name);
 
    bool isD = (&parent_inode)->isDirectory;
 
@@ -174,7 +167,6 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
             return EXIT_FAILURE;
          }
 
-         printf("V tomhle datablocku není! %d\n", i);
       }
    }
 
@@ -195,8 +187,6 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
       return EXIT_FAILURE;
    }
    
-   printf("tady 3\n");
-
    struct pseudo_inode inode = {};
    (&inode)->isDirectory = true;
    (&inode)->nodeid = inode_id;
@@ -223,7 +213,6 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
    struct directory_item item = {};
    (&item)->inode = inode_id;
    strcpy((&item)->item_name, name);
-   printf("Název: %s\n", (&item)->item_name);
    
    set_file_datablock_position(fs, (&parent_inode)->direct[free_directory_item_block]);
    fseek(fs->file, free_directory_item * sizeof(struct directory_item), SEEK_CUR);
@@ -257,7 +246,6 @@ int find_directory_item_in_datablock(file_system *fs, int32_t datablock, char *n
    fread(items, sizeof(items), 1, fs->file);
    for(i = 0; i < item_count; i++) {
       if(strcmp((&items[i])->item_name, name) == 0) {
-         printf("Nalezen!\n");         
          return (&items[i])->inode;
       }
    }
@@ -278,13 +266,10 @@ int create_datablock(file_system *fs) {
 }
 
 int set_file_inode_position(file_system *fs, int32_t inode_id) {
-   printf("# SB| ISA: %d | sizeof(inode): %d\n", fs->sb->inode_start_address, sizeof(struct pseudo_inode));
-   printf("Skáču na inode (%d) pozici: %d\n", inode_id, fs->sb->inode_start_address + (inode_id - 1) * sizeof(struct pseudo_inode));
    return fseek(fs->file, fs->sb->inode_start_address + (inode_id - 1) * sizeof(struct pseudo_inode), SEEK_SET);
 }
 
 int set_file_datablock_position(file_system *fs, int32_t datablock_id) {
-   printf("Skáču na data pozici: %d\n", fs->sb->data_start_address + (datablock_id - 1) * fs->sb->datablock_size);
    return fseek(fs->file, fs->sb->data_start_address + (datablock_id - 1) * fs->sb->datablock_size, SEEK_SET);
 }
 
@@ -297,9 +282,12 @@ int32_t get_directory_item_inode(file_system *fs, int32_t parent, char* name) {
    set_file_inode_position(fs, parent);
    fread(&parent_inode, sizeof(struct pseudo_inode), 1, fs->file);
 
+   if(!parent_inode.isDirectory) {
+      return 0;
+   }
+
    for(i = 0; i < DIRECT_LINKS_COUNT; i++) {
       inode_number = find_directory_item_in_datablock(fs, (&parent_inode)->direct[i], name);
-      printf("Nalezeno v datablocku: %d inode %d\n", i, inode_number);
 
       if(inode_number != 0) {
          return inode_number;
@@ -311,7 +299,6 @@ int32_t get_directory_item_inode(file_system *fs, int32_t parent, char* name) {
 }
 
 int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path) {
-   printf("Počítám počet prochazejicich inodu.\n");
 
    if(strlen(path) == 0) {
       return parent;
@@ -334,17 +321,22 @@ int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path) {
       files_count--;
    }
 
-   printf("\nProjdu přes %d inodů\n", files_count);
 
+   char *parent_name = NULL;
    char *folder = strtok(path, "/");
 
-   printf("Projdu (%d) přes složky: \n", parent);
    while(folder != NULL) {
       parent = get_directory_item_inode(fs, parent, folder);
-      printf("%s - %d\n", folder, parent);
+      //printf("%s - %d\n", folder, parent);
+      if(parent == 0) {
+         printf("Chyba! - %s není složka!\n", parent_name);
+         return 0;
+      }
+
+      parent_name = folder;
       folder = strtok(NULL, "/");
    }
-   printf("Toť vše. %d, %s \n", parent, path);
+
    return parent;
 }
 

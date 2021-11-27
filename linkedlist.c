@@ -119,3 +119,25 @@ int linked_list_free(linked_list **ls) {
 
     return EXIT_SUCCESS;
 }
+
+int linked_list_clear(linked_list *ls) {
+    struct linked_list_item *item;
+
+    item = ls->first;
+
+    while(item->next) {
+        item = item->next;
+        free(item->previous->name);
+        free(item->previous);
+    }
+
+    free(item->name);
+    free(item);
+
+    ls->first = NULL;
+    ls->last = NULL;
+    ls->size = 0;
+
+    return EXIT_SUCCESS;
+
+}

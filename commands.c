@@ -79,46 +79,19 @@ int mkdir(file_system *fs, int argc, char **argv) {
 
     i++;
 
-    printf("Po cyklu.\n");
-
-    printf("i: %d\n", i);
-
     char parent_path[i+1];
     strncpy(parent_path, full_path, i);
     parent_path[i] = '\0';
 
-    printf("co treba tady?\n");
-
-    char folder_name[path_length-i];
-    printf("%d\n", path_length-i);
+    char folder_name[path_length-i+1];
     strncpy(folder_name, &(full_path[i]), path_length-i);
     folder_name[path_length-i] = '\0';
 
-    if(folder_name[path_length-i-1] == '/') {
-        folder_name[path_length-i-1] = '\0';
-    }
-
-    int n = strlen(folder_name) + 1;
-    for(i = 0; i < n; i++) {
-        printf("%d ", folder_name[i]);
-    }
-    printf("\n");
-
-    //int path_inode = get_inode_by_path()
-
-    int32_t folder_node = get_inode_by_path(fs, 1, parent_path);
-    printf("Cesta odkazuje na inode: %d\n", folder_node);
+    int32_t folder_node = get_inode_by_path(fs, fs->current_folder, parent_path);
     create_directory(fs, folder_node, folder_name);
     //create_directory(fs, 1, "home");
 
-    printf("\n");
-
-    printf("Vypis:\n");
-
-    printf("Rodicovska slozka: %s\n", parent_path);
-    printf("Nazev slozky: %s\n", folder_name);
-    printf("Vytvoř slozku %s\n", argv[0]);
-
+    fflush(fs->file);
 
     return EXIT_SUCCESS;
 }
@@ -130,7 +103,14 @@ int rmdir(file_system *fs, int argc, char **argv) {
 }
 
 int ls(file_system *fs, int argc, char **argv) {
+    int32_t folder;
 
+    if(argc > 0) {
+        folder = get_inode_by_path(fs, fs->current_folder, argv[0]);
+    } else {
+        folder = fs->current_folder;
+    }
+    print_folder_content(fs, folder);
 
     return EXIT_SUCCESS;
 }
@@ -142,18 +122,100 @@ int cat(file_system *fs, int argc, char **argv) {
 }
 
 int cd(file_system *fs, int argc, char **argv) {
+    int32_t parent;
+    int counter;
+    int i;
+    linked_list *path;
 
+    if(argc < 1) {
+        printf("Zadej parametr!\n");
+        return EXIT_FAILURE;
+    }
+
+    if(strlen(argv[0]) == 0) {
+        return EXIT_SUCCESS;
+    }
+
+    if(argv[0][0] == '/') {
+        parent = 1;
+        path = linked_list_create();
+
+    } else {
+        parent = fs->current_folder;
+        path = fs->path;
+        if(!path) {
+            printf("Chyba: Vnitrni chyba.");
+            return EXIT_FAILURE;
+        }
+    }
+
+    counter = 0;
+    char *parent_name = NULL;
+    char *folder = strtok(argv[0], "/");
+
+    while(folder != NULL) {
+        parent = get_directory_item_inode(fs, parent, folder);
+        //printf("%s - %d\n", folder, parent);
+
+        if(parent == 0) {
+            printf("Chyba! - %s není složka!\n", parent_name);
+            for(i = 0; i < counter; i++) {
+                linked_list_remove_last(path);
+
+            }
+
+            return EXIT_FAILURE;
+        } else {
+            if(!strcmp(folder, ".")) {
+                folder = strtok(NULL, "/");
+            } else if(!strcmp(folder, "..")) {
+                linked_list_remove_last(path);
+                counter--;
+            } else {
+                linked_list_add(path, folder);
+                counter++;
+            }
+        }
+
+        parent_name = folder;
+        folder = strtok(NULL, "/");
+    }
+
+    fs->current_folder = parent;
+    if(fs->path != path) {
+        linked_list_free(&fs->path);
+        fs->path = path;
+    }
 
     return EXIT_SUCCESS;
 }
 
 int pwd(file_system *fs, int argc, char **argv) {
+    
+    struct linked_list_item* item = fs->path->first;
 
+    if(item == NULL) {
+        printf("/");
+    }
+
+    while(item != NULL) {
+        printf("/%s", item->name);
+        item = item->next;
+    }
+
+    printf("\n");
 
     return EXIT_SUCCESS;
 }
 
 int info(file_system *fs, int argc, char **argv) {
+    
+    load_superblock(fs);
+
+    printf("---------------- INFO -----------------\n");
+    printf("Autor: %s\n", fs->sb->signature);
+    printf("Description: %s\n", fs->sb->volume_descriptor);
+    printf("---------------------------------------\n");
 
 
     return EXIT_SUCCESS;

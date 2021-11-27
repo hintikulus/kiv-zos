@@ -38,13 +38,12 @@ int main(int argc, char** argv) {
 
     fs = file_system_open(file_name);
 
-    size = 10 * 1024 * 1024;
+    size = 1 * 1024 * 1024;
 
     printf("Volam formatovani\n");
     file_system_format(fs, size);
     printf("Ukončeno formatovani\n");
 
-    printf("##### %d ##### (2)\n", (fs)->sb->inode_start_address);
     list = linked_list_create();
 
     linked_list_add(list, "text");
@@ -75,7 +74,19 @@ int main(int argc, char** argv) {
         fcmd handler;
         char **argv;
 
-        printf(">>> ");
+        struct linked_list_item* item = fs->path->first;
+        printf("(%d) ", fs->current_folder);
+
+        if(item == NULL) {
+            printf("/");
+        }
+
+        while(item != NULL) {
+            printf("/%s", item->name);
+            item = item->next;
+        }
+
+        printf("$ ");
         fgets(cmd, 256, stdin);
         input_size = strlen(cmd);
         if(input_size <= 1) {
@@ -104,21 +115,16 @@ int main(int argc, char** argv) {
             argv[i] = strtok(NULL, " ");
         }
 
-        printf("Ziskavam handler pro %s\n", command);
+        if(!strcmp(cmd, "exit")) {
+            break;
+        }
 
         handler = get_handler(command);
 
         if(handler) {
-            printf("Mám handler\n");
             handler(fs, argc, argv);
         } else {
-            printf("Nemám handler\n");
-        }
-
-        printf("Příkaz: %s\n", cmd);
-
-        if(!strcmp(cmd, "exit")) {
-            break;
+            printf("Neznámý příkaz.\n");
         }
     }
 
