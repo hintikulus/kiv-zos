@@ -1,7 +1,9 @@
+//
+// Created by hintik on 28.11.21.
+//
 
-#ifndef COMMANDS_H
-#define COMMANDS_H
-
+#ifndef SP_COMMANDS_H
+#define SP_COMMANDS_H
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -48,4 +50,5 @@ int format(file_system *fs, int argc, char **argv);
 
 int ln(file_system *fs, int argc, char **argv);
 
-#endif
+
+#endif //SP_COMMANDS_H

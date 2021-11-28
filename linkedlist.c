@@ -8,7 +8,7 @@ linked_list *linked_list_create() {
     if(!list) {
         return NULL;
     }
-    
+
     list->size = 0;
     list->first = NULL;
     list->last = NULL;
@@ -38,7 +38,7 @@ int linked_list_add(linked_list *ls, char *name) {
         free(item);
         return EXIT_FAILURE;
     }
-    
+
     strcpy(item->name, name);
 
     item->previous = ls->last;
@@ -64,7 +64,7 @@ int linked_list_add_to_start(linked_list *ls, char *name) {
 
 int linked_list_remove_last(linked_list *ls) {
     struct linked_list_item *item = NULL;
-    
+
     if(!ls) {
         return EXIT_FAILURE;
     }
@@ -84,7 +84,7 @@ int linked_list_remove_last(linked_list *ls) {
 
     if(ls->size == 0) {
         ls->first = NULL;
-    }   
+    }
 
     free(item->name);
     free(item);

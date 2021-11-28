@@ -1,5 +1,9 @@
-#ifndef STRUCTURES_H
-#define STRUCTURES_H
+//
+// Created by hintik on 28.11.21.
+//
+
+#ifndef SP_STRUCTURES_H
+#define SP_STRUCTURES_H
 
 #include <stdio.h>
 #include "linkedlist.h"
@@ -12,4 +16,4 @@ typedef struct _file_system {
     linked_list *path;
 } file_system;
 
-#endif
+#endif //SP_STRUCTURES_H

@@ -3,21 +3,21 @@
 
 const int COMMANDS_COUNT = 15;
 const cmd_handler COMMANDS[] = {
-    {"cp", cp},
-    {"mv", mv},
-    {"rm", rm},
-    {"mkdir", mkdir},
-    {"rmdir", rmdir},
-    {"ls", ls},
-    {"cat", cat},
-    {"cd", cd},
-    {"pwd", pwd},
-    {"info", info},
-    {"incp", incp},
-    {"outcp", outcp},
-    {"load", load},
-    {"format", format},
-    {"ln", ln}
+        {"cp", cp},
+        {"mv", mv},
+        {"rm", rm},
+        {"mkdir", mkdir},
+        {"rmdir", rmdir},
+        {"ls", ls},
+        {"cat", cat},
+        {"cd", cd},
+        {"pwd", pwd},
+        {"info", info},
+        {"incp", incp},
+        {"outcp", outcp},
+        {"load", load},
+        {"format", format},
+        {"ln", ln}
 };
 
 fcmd get_handler(char command[]) {
@@ -195,7 +195,7 @@ int cd(file_system *fs, int argc, char **argv) {
 }
 
 int pwd(file_system *fs, int argc, char **argv) {
-    
+
     struct linked_list_item* item = fs->path->first;
 
     if(item == NULL) {
@@ -213,7 +213,7 @@ int pwd(file_system *fs, int argc, char **argv) {
 }
 
 int info(file_system *fs, int argc, char **argv) {
-    
+
     load_superblock(fs);
 
     printf("---------------- INFO -----------------\n");

@@ -14,10 +14,7 @@
 int main(int argc, char** argv) {
     file_system *fs;
     linked_list *list;
-    char *file_name;
     int size;
-    struct superblock sb;
-    struct pseudo_inode inode;
     char cmd[256] = { 0 };
     struct linked_list_item *item;
 
@@ -26,17 +23,7 @@ int main(int argc, char** argv) {
         return EXIT_SUCCESS;
     }
 
-    file_name = argv[1];
-
-    printf("Hello there\n");
-
-    printf("%ld\n", sizeof(sb));
-
-    printf("%ld\n", sizeof(inode));
-
-    
-
-    fs = file_system_open(file_name);
+    fs = file_system_open(argv[1]);
 
     size = 1 * 1024 * 1024;
 
@@ -63,7 +50,7 @@ int main(int argc, char** argv) {
         item = item->next;
     }
     printf("%s\n", item->name);
-    
+
     linked_list_free(&list);
 
     while(1) {
@@ -110,7 +97,7 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        
+
         for(i = 0; i < argc; i++) {
             argv[i] = strtok(NULL, " ");
         }
@@ -128,7 +115,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    
+
     file_system_close(fs);
 
     return EXIT_SUCCESS;

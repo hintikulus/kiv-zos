@@ -1,6 +1,9 @@
+//
+// Created by hintik on 28.11.21.
+//
 
-#ifndef FILE_SYSTEM_H
-#define FILE_SYSTEM_H
+#ifndef SP_FILESYSTEM_H
+#define SP_FILESYSTEM_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,4 +27,5 @@ int file_system_close(file_system *fs0);
 int print_folder_content(file_system *fs, int32_t folder);
 
 
-#endif
+
+#endif //SP_FILESYSTEM_H

@@ -1,5 +1,9 @@
-#ifndef INODE_H
-#define INODE_H
+//
+// Created by hintik on 28.11.21.
+//
+
+#ifndef SP_INODE_H
+#define SP_INODE_H
 
 /*
  priklad - verze 2021-01
@@ -94,4 +98,6 @@ int free_inode(file_system *fs, int32_t inode_id);
 int free_datablock(file_system *fs, int32_t datablock_id);
 
 int32_t find_file_in_folder(file_system *fs, int32_t folder, char *name);
-#endif
+
+
+#endif //SP_INODE_H

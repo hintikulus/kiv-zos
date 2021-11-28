@@ -1,5 +1,9 @@
-#ifndef LINKED_LIST_H
-#define LINKED_LIST_H
+//
+// Created by hintik on 28.11.21.
+//
+
+#ifndef SP_LINKEDLIST_H
+#define SP_LINKEDLIST_H
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -30,4 +34,4 @@ int linked_list_add_to_start(linked_list *ls, char *name);
 
 int linked_list_free(linked_list **ls);
 
-#endif
+#endif //SP_LINKEDLIST_H
