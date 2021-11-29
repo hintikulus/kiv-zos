@@ -26,6 +26,8 @@ int file_system_close(file_system *fs0);
 
 int print_folder_content(file_system *fs, int32_t folder);
 
+int create_file(file_system *fs, char *path1, char *path2);
+
 
 
 #endif //SP_FILESYSTEM_H

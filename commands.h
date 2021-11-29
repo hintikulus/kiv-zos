@@ -50,5 +50,4 @@ int format(file_system *fs, int argc, char **argv);
 
 int ln(file_system *fs, int argc, char **argv);
 
-
 #endif //SP_COMMANDS_H

@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
     linked_list *list;
     int size;
     char cmd[256] = { 0 };
+    char cmd_temp[256] = { 0 };
     struct linked_list_item *item;
 
     if(argc <= 1) {
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
     linked_list_free(&list);
 
     while(1) {
-        char *command;
+        char *command, *arg, *cmd2;
         int input_size;
         int argc;
         int i;
@@ -76,30 +77,42 @@ int main(int argc, char** argv) {
         printf("$ ");
         fgets(cmd, 256, stdin);
         input_size = strlen(cmd);
+
         if(input_size <= 1) {
             continue;
         }
         cmd[input_size - 1] = '\000';
 
-        argc = 0;
+        strcpy(cmd_temp, cmd);
+        char *counter = cmd;
 
-        for(i = 0; i < input_size; i++) {
-
-            if(cmd[i] == ' ') {
-                argc++;
-            }
+        strtok(cmd_temp, " ");
+        if(!argv) {
+            continue;
         }
 
-        command = strtok(cmd, " ");
+        //argc = 0;
+        arg = strtok(NULL, " ");
+        argc = 0;
+
+        while(arg != NULL) {
+            argc++;
+            arg = strtok(NULL, " ");
+        }
 
         argv = (char **) malloc(sizeof(char *) * argc);
         if(!argv) {
             continue;
         }
 
+        command = strtok(cmd, " ");
+        arg = strtok(NULL, " ");
 
-        for(i = 0; i < argc; i++) {
-            argv[i] = strtok(NULL, " ");
+        i = 0;
+        while(arg != NULL) {
+            argv[i] = arg;
+            i++;
+            arg = strtok(NULL, " ");
         }
 
         if(!strcmp(cmd, "exit")) {

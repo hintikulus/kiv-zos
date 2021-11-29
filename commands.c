@@ -140,6 +140,7 @@ int cd(file_system *fs, int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
+
     if(argv[0][0] == '/') {
         parent = 1;
         path = linked_list_create();
@@ -227,6 +228,12 @@ int info(file_system *fs, int argc, char **argv) {
 
 int incp(file_system *fs, int argc, char **argv) {
 
+    if(argc < 2) {
+        printf("Nespravny pocet parametru\n");
+        return EXIT_FAILURE;
+    }
+
+    create_file(fs, argv[0], argv[1]);
 
     return EXIT_SUCCESS;
 }

@@ -208,3 +208,23 @@ int print_folder_content(file_system *fs, int32_t folder) {
 
     return EXIT_SUCCESS;
 }
+
+
+
+int create_file(file_system *fs, char *path1, char *path2) {
+    if(!fs || !path1 || !path2) {
+        return 0;
+    }
+
+    FILE *source_file = fopen(path1, "r");
+    char *buf[fs->sb->datablock_size];
+
+    if(!source_file) {
+        return 0;
+    }
+
+
+
+
+    fclose(source_file);
+}
