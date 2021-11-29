@@ -29,8 +29,15 @@ file_system *file_system_open(char *file_name) {
     //  return NULL;
     //}
 
+    FILE *file = fopen(file_name, "wb+");
+
+    if(!file) {
+        linked_list_free(&path);
+    }
+
+    FS->current_folder = 1;
     FS->file_name = file_name;
-    FS->file = fopen(file_name, "wb+");
+    FS->file = file;
     FS->sb = NULL;
     FS->path = path;
 
@@ -39,37 +46,38 @@ file_system *file_system_open(char *file_name) {
 
 int file_system_format(file_system *fs, int size) {
     int i;
-    char *nula = NULL;
+    char nula[1] = { 0 };
 
-    nula = (char *) malloc(sizeof(char));
-    nula[0] = '\0';
-
-    if(!nula) {
+    if(!fs || !fs->file) {
         return EXIT_FAILURE;
     }
 
-    nula[0] = '\0';
+    //nula = (char *) malloc(sizeof(char));
+    //nula[0] = '\0';
+
+    //struct superblock sb = {};
+    //memset(sb, '\0', sizeof(struct superblock));
 
     printf("Formatuji %ld\n", sizeof(*nula));
 
     //struct superblock sb = {};
     //fill_default_sb(fs->sb);
 
+    nula[0] = '\0';
+    fseek(fs->file, 0, SEEK_SET);
     for(i = 0; i < size; i++) {
-        fwrite(nula, sizeof(*nula), 1, fs->file);
+        fwrite(nula, sizeof(char), 1, fs->file);
     }
 
-    free(nula);
+    //free(nula);
 
     printf("Naplňuji superblock: \n");
     struct superblock *sb = (struct superblock *) malloc(sizeof(struct superblock));
 
-    if(!sb) {
+    if(sb == NULL) {
         return EXIT_FAILURE;
     }
 
-    //struct superblock sb = {};
-    //memset(sb, '\0', sizeof(struct superblock));
     fill_default_sb(sb);
     fill_superblock(sb, size, 4*1024);
     fs->sb = sb;
