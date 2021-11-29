@@ -62,9 +62,15 @@ int file_system_format(file_system *fs, int size) {
     free(nula);
 
     printf("Naplňuji superblock: \n");
-
     struct superblock *sb = (struct superblock *) malloc(sizeof(struct superblock));
+
+    if(!sb) {
+        return EXIT_FAILURE;
+    }
+
+    //struct superblock sb = {};
     //memset(sb, '\0', sizeof(struct superblock));
+    fill_default_sb(sb);
     fill_superblock(sb, size, 4*1024);
     fs->sb = sb;
 
@@ -82,14 +88,14 @@ int file_system_format(file_system *fs, int size) {
     u_char inode_bitmap[inode_bitmap_size];
     u_char data_bitmap[data_bitmap_size];
 
-    memset(inode_bitmap, '\0', inode_bitmap_size);
-    memset(data_bitmap, '\0', data_bitmap_size);
+    memset(inode_bitmap, 0, inode_bitmap_size * sizeof(u_char));
+    memset(data_bitmap, 0, data_bitmap_size * sizeof(u_char));
 
     printf("Velikost: %ld\n", sizeof(inode_bitmap));
 
     printf("zapisuji bitmapy\n");
-    fwrite(&inode_bitmap, sizeof(u_char), inode_bitmap_size, fs->file);
-    fwrite(&data_bitmap, sizeof(u_char), data_bitmap_size, fs->file);
+    fwrite(inode_bitmap, sizeof(u_char), inode_bitmap_size, fs->file);
+    fwrite(data_bitmap, sizeof(u_char), data_bitmap_size, fs->file);
     //u_char inode_bitmap[inode_bitmap_size] = { 0 };
     //u_char data_bitmap[data_bitmap_size] = { 0 };
     printf("konec zapisovani bitmap\n");
@@ -149,7 +155,9 @@ int load_superblock(file_system *fs) {
 
 int file_system_close(file_system *fs) {
     free(fs->sb);
+    linked_list_free(&fs->path);
     fclose(fs->file);
+    free(fs);
     return EXIT_SUCCESS;
 }
 

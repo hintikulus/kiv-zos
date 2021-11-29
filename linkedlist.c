@@ -26,18 +26,23 @@ int linked_list_add(linked_list *ls, char *name) {
 
     item = (struct linked_list_item *) malloc(sizeof(struct linked_list_item));
 
-    if(!item) {
+    if(item == NULL) {
         return EXIT_FAILURE;
     }
+
+    item->previous = NULL;
+    item->next = NULL;
 
     name_len = strlen(name);
 
-    item->name = (char *) malloc(sizeof((name_len+1) * sizeof(char)));
+    char *tmp = (char *) malloc((name_len+1) * sizeof(char));
 
-    if(!item->name) {
+    if(tmp == NULL) {
         free(item);
         return EXIT_FAILURE;
     }
+
+    item->name = tmp;
 
     strcpy(item->name, name);
 

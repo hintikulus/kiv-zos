@@ -103,6 +103,7 @@ int main(int argc, char** argv) {
         }
 
         if(!strcmp(cmd, "exit")) {
+            free(argv);
             break;
         }
 
@@ -113,6 +114,7 @@ int main(int argc, char** argv) {
         } else {
             printf("Neznámý příkaz.\n");
         }
+        free(argv);
     }
 
 

@@ -55,10 +55,19 @@ void fill_superblock(struct superblock *sb, int32_t size, int32_t datablock_size
 }
 
 int get_free_inode_id(file_system *fs) {
-    u_char inode_bitmap[fs->sb->bitmap_start_address - fs->sb->bitmapi_start_address];
-    memset(inode_bitmap, '\0', sizeof(inode_bitmap));
+    if(!fs) {
+        return 0;
+    }
+
+    printf("Chyba je nekde mezi\n");
+    int array_size = fs->sb->bitmap_start_address - fs->sb->bitmapi_start_address;
+    u_char inode_bitmap[array_size];
+    memset(inode_bitmap, 0, array_size * sizeof(u_char));
+
+    printf("A mezi.\n");
     fseek(fs->file, fs->sb->bitmapi_start_address, SEEK_SET);
-    fread(inode_bitmap, sizeof(inode_bitmap), 1, fs->file);
+
+    fread(inode_bitmap, sizeof(u_char) * fs->sb->bitmap_start_address - fs->sb->bitmapi_start_address, 1, fs->file);
 
     for (int i = 0 ; i < sizeof(inode_bitmap); i++) {
         for (int j=7; j>=0; j--) {
