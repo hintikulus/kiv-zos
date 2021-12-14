@@ -1,0 +1,1 @@
+/usr/bin/cc -g CMakeFiles/sp.dir/main.c.o CMakeFiles/sp.dir/linkedlist.c.o CMakeFiles/sp.dir/commands.c.o CMakeFiles/sp.dir/filesystem.c.o CMakeFiles/sp.dir/inode.c.o -o sp  -lm 
