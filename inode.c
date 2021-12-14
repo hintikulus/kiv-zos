@@ -237,7 +237,6 @@ int create_directory(file_system *fs, int32_t parent, char *name) {
     return EXIT_SUCCESS;
 }
 
-
 int find_free_directory_item_in_folder(file_system *fs, int32_t folder, int32_t *datablock_number) {
     int i, j, k;
     int32_t link, found_id;
@@ -432,6 +431,27 @@ int create_datablock(file_system *fs) {
 
     printf("Volný blok: %d\n", id);
     return EXIT_SUCCESS;
+}
+
+int set_directory_item(file_system *fs, int32_t parent, int32_t inode, char *name) {
+    int datablock_number = 0;
+    int free_directory_item = find_free_directory_item_in_folder(fs, parent, &datablock_number);
+
+    if(free_directory_item == 0 || datablock_number == 0) {
+        printf("Není místo");
+        return EXIT_FAILURE;
+    }
+    printf("Nalezeno: %i v %i\n", free_directory_item, datablock_number);
+
+    struct directory_item di = {};
+    (&di)->inode = inode;
+    strncpy((&di)->item_name, name, 11);
+
+    set_file_datablock_position(fs, datablock_number);
+    fseek(fs->file, free_directory_item * sizeof(struct directory_item), SEEK_CUR);
+    fwrite(&di, sizeof(struct directory_item), 1, fs->file);
+
+
 }
 
 int set_file_inode_position(file_system *fs, int32_t inode_id) {

@@ -209,6 +209,24 @@ int print_folder_content(file_system *fs, int32_t folder) {
     return EXIT_SUCCESS;
 }
 
+int fill_datablock(file_system *fs, char *data) {
+    int id = get_free_datablock_id(fs);
+
+    if(id == 0) {
+        return 0;
+    }
+    printf("OBSAH: \n");
+
+    printf("%s\n\n", data);
+
+    printf("Novy datablock: %i\n", id);
+
+    set_file_datablock_position(fs, id);
+    fwrite(data, fs->sb->datablock_size, 1, fs->file);
+    fflush(fs->file);
+
+    return id;
+}
 
 
 int create_file(file_system *fs, char *path1, char *path2) {
@@ -217,14 +235,131 @@ int create_file(file_system *fs, char *path1, char *path2) {
     }
 
     FILE *source_file = fopen(path1, "r");
-    char *buf[fs->sb->datablock_size];
+    char buf[fs->sb->datablock_size];
 
     if(!source_file) {
         return 0;
     }
 
+    int inode_id = get_free_inode_id(fs);
+
+    if(inode_id == 0) {
+        return 0;
+    }
+
+    struct pseudo_inode inode = {};
+    (&inode)->isDirectory = false;
+    (&inode)->nodeid = inode_id;
+    (&inode)->references = 0;
+
+    fseek(source_file, 0, SEEK_END);
+    long size = ftell(source_file);
+    fseek(source_file, 0, SEEK_SET);
+
+    printf("SIZE = %ld\n", size);
+    long copied_size = 0;
+    int i;
+
+    /* Procházení přímých odkazů */
+    for(i = 0; i < DIRECT_LINKS_COUNT && copied_size < size; i++) {
+        fread(buf, fs->sb->datablock_size, 1, source_file);
+        printf("OBSAH_PRE: \n %s\n\n", buf);
+        int datablock = fill_datablock(fs, buf);
+        if (datablock == 0) {
+            //Chyba
+            break;
+        }
+
+        (&inode)->direct[i] = datablock;
+        copied_size += fs->sb->datablock_size;
+    }
+
+    /* Procházení nepřímých odkazů 1. řádu */
+    printf("Hello\n");
+    if(copied_size < size) {
+        printf("Hello2\n");
+        int indirect = get_free_datablock_id(fs);
+        if (indirect == 0) {
+            return 0;
+        }
+
+        int array_size = fs->sb->datablock_size / sizeof(int32_t);
+        int32_t* array_ptrs = malloc(fs->sb->datablock_size);
+        if(!array_ptrs) {
+            return 0;
+        }
+        int j = 0;
+
+        while(array_size > j && copied_size < size) {
+            fread(buf, fs->sb->datablock_size, 1, source_file);
+            int datablock = fill_datablock(fs, buf);
+            if (datablock == 0) {
+                //Chyba
+                break;
+            }
+
+            copied_size += fs->sb->datablock_size;
+            array_ptrs[j] = datablock;
+            j++;
+        }
+
+        set_file_datablock_position(fs, indirect);
+        fwrite(array_ptrs, fs->sb->datablock_size, 1, fs->file);
+        (&inode)->indirect[0] = indirect;
 
 
+        if(copied_size < size) {
+            int indirect2 = get_free_datablock_id(fs);
+            memset(array_ptrs, 0, fs->sb->datablock_size);
+            int32_t *indirect_ptrs = malloc(fs->sb->datablock_size);
+            if(!indirect_ptrs) {
+                free(array_ptrs);
+                return 0;
+            }
+            for(i = 0; i < array_size && copied_size < size; i++) {
+                j = 0;
+                memset(indirect_ptrs, 0, fs->sb->datablock_size);
+                indirect = get_free_datablock_id(fs);
 
+                while(array_size > j && copied_size < size) {
+                    fread(buf, fs->sb->datablock_size, 1, source_file);
+                    int datablock = fill_datablock(fs, buf);
+                    if (datablock == 0) {
+                        //Chyba
+                        break;
+                    }
+
+                    copied_size += fs->sb->datablock_size;
+                    indirect_ptrs[j] = datablock;
+                    j++;
+                }
+
+                set_file_datablock_position(fs, indirect);
+                fwrite(indirect_ptrs, fs->sb->datablock_size, 1, fs->file);
+                array_ptrs[i] = indirect;
+
+
+            }
+
+            set_file_datablock_position(fs, indirect2);
+            fwrite(array_ptrs, fs->sb->datablock_size, 1, fs->file);
+            (&inode)->indirect[1] = indirect2;
+            free(indirect_ptrs);
+        }
+
+        free(array_ptrs);
+    }
+
+    printf("Hello\n");
+    (&inode)->file_size = size;
+
+    set_file_inode_position(fs, inode_id);
+    fwrite(&inode, sizeof(struct pseudo_inode), 1, fs->file);
+
+    set_directory_item(fs, fs->current_folder, inode_id, path2);
     fclose(source_file);
+
+    printf("Soubor vlozen\n");
+
+    fflush(fs->file);
 }

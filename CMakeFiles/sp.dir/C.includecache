@@ -6,21 +6,9 @@
 
 #IncludeRegexTransform: 
 
-/home/hintik/Plocha/zos/sp/commands.c
-commands.h
-/home/hintik/Plocha/zos/sp/commands.h
-
-/home/hintik/Plocha/zos/sp/commands.h
-stdlib.h
--
-stdio.h
--
-string.h
--
-ctype.h
--
-inode.h
-/home/hintik/Plocha/zos/sp/inode.h
+/home/hintik/Plocha/zos/sp/filesystem.c
+filesystem.h
+/home/hintik/Plocha/zos/sp/filesystem.h
 
 /home/hintik/Plocha/zos/sp/filesystem.h
 stdio.h

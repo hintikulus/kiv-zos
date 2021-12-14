@@ -44,7 +44,7 @@ struct pseudo_inode {
     int32_t nodeid;                 /*ID i-uzlu, pokud ID = ID_ITEM_FREE, je polozka volna*/
     bool isDirectory;               /*soubor, nebo adresar*/
     int8_t references;              /*počet odkazů na i-uzel, používá se pro hardlinky*/
-    int32_t file_size;              /*velikost souboru v bytech*/
+    long file_size;              /*velikost souboru v bytech*/
     int32_t direct[DIRECT_LINKS_COUNT];                /* 1. přímý odkaz na datové bloky*/
     /*int32_t direct2; */               /* 2. přímý odkaz na datové bloky*/
     /*int32_t direct3; */              /* 3. přímý odkaz na datové bloky*/
@@ -99,5 +99,6 @@ int free_datablock(file_system *fs, int32_t datablock_id);
 
 int32_t find_file_in_folder(file_system *fs, int32_t folder, char *name);
 
+int set_directory_item(file_system *fs, int32_t parent, int32_t inode, char *name);
 
 #endif //SP_INODE_H
