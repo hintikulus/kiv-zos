@@ -465,6 +465,65 @@ int set_file_datablock_position(file_system *fs, int32_t datablock_id) {
     return fseek(fs->file, fs->sb->data_start_address + (datablock_id - 1) * fs->sb->datablock_size, SEEK_SET);
 }
 
+int32_t get_datablock_id(file_system *fs, struct pseudo_inode *inode, int32_t datablock_id) {
+    int n = fs->sb->datablock_size / sizeof(int32_t);
+
+    if(datablock_id <= DIRECT_LINKS_COUNT) {
+        return inode->direct[datablock_id];
+    }
+    datablock_id -= DIRECT_LINKS_COUNT;
+    if(datablock_id <= n) {
+        int32_t address;
+        set_file_datablock_position(fs, inode->indirect[0]);
+        fseek(fs->file, datablock_id, SEEK_CUR);
+        fread(&address, sizeof(int32_t), 1, fs->file);
+        return address;
+    } else {
+        datablock_id -= n;
+        int p = datablock_id / n;
+        datablock_id = datablock_id % n;
+        int32_t address;
+        set_file_datablock_position(fs, inode->indirect[1]);
+        fseek(fs->file, p, SEEK_CUR);
+        fread(&address, sizeof(int32_t), 1, fs->file);
+        set_file_datablock_position(fs, address);
+        fseek(fs->file, n, SEEK_CUR);
+        fread(&address, sizeof(int32_t), 1, fs->file);
+        return address;
+
+    }
+
+    return -1;
+}
+
+int set_datablock_id(file_system *fs, struct pseudo_inode *inode, int32_t datablock_id, int32_t datablock_address) {
+    int n = fs->sb->datablock_size / sizeof(int32_t);
+
+    if(datablock_id <= DIRECT_LINKS_COUNT) {
+        return inode->direct[datablock_id];
+    }
+    datablock_id -= DIRECT_LINKS_COUNT;
+    if(datablock_id <= n) {
+        int32_t address;
+        set_file_datablock_position(fs, inode->indirect[0]);
+        fseek(fs->file, datablock_id, SEEK_CUR);
+        fwrite(&datablock_address, sizeof(int32_t), 1, fs->file);
+        return EXIT_SUCCESS;
+    } else {
+        datablock_id -= n;
+        int p = datablock_id / n;
+        datablock_id = datablock_id % n;
+        int32_t address;
+        set_file_datablock_position(fs, inode->indirect[1]);
+        fseek(fs->file, p, SEEK_CUR);
+        fread(&address, sizeof(int32_t), 1, fs->file);
+        set_file_datablock_position(fs, address);
+        fseek(fs->file, n, SEEK_CUR);
+        fwrite(&datablock_address, sizeof(int32_t), 1, fs->file);
+        return EXIT_SUCCESS;
+    }
+}
+
 int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path) {
 
     if(strlen(path) == 0) {
@@ -510,12 +569,38 @@ int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path) {
 }
 
 int free_inode(file_system *fs, int32_t inode_id) {
+    char* empty_block = malloc(sizeof(struct pseudo_inode));
+    memset(empty_block, 0, sizeof(struct pseudo_inode));
+    set_file_inode_position(fs, inode_id);
+    fwrite(empty_block, sizeof(struct pseudo_inode), 1, fs->file);
+
+    char bitmap;
+    fseek(fs->file, fs->sb->bitmapi_start_address + inode_id/8, SEEK_SET);
+    fread(&bitmap, sizeof(char), 1, fs->file);
+    u_char zero = 0;
+    bitmap &= zero << (7 - inode_id%8);
+
+    fseek(fs->file, fs->sb->bitmapi_start_address + inode_id/8, SEEK_SET);
+    fwrite(&bitmap, sizeof(char), 1, fs->file);
 
     return EXIT_SUCCESS;
 
 }
 
 int free_datablock(file_system *fs, int32_t datablock_id) {
+    char* empty_block = malloc(fs->sb->datablock_size);
+    memset(empty_block, 0, fs->sb->datablock_size);
+    set_file_datablock_position(fs, datablock_id);
+    fwrite(empty_block, fs->sb->datablock_size, 1, fs->file);
+
+    char bitmap;
+    fseek(fs->file, fs->sb->bitmap_start_address + datablock_id/8, SEEK_SET);
+    fread(&bitmap, sizeof(char), 1, fs->file);
+    u_char zero = 0;
+    bitmap &= zero << (7 - datablock_id%8);
+
+    fseek(fs->file, fs->sb->bitmap_start_address + datablock_id/8, SEEK_SET);
+    fwrite(&bitmap, sizeof(char), 1, fs->file);
 
     return EXIT_SUCCESS;
 }

@@ -228,7 +228,6 @@ int fill_datablock(file_system *fs, char *data) {
     return id;
 }
 
-
 int create_file(file_system *fs, char *path1, char *path2) {
     if(!fs || !path1 || !path2) {
         return 0;
@@ -260,7 +259,68 @@ int create_file(file_system *fs, char *path1, char *path2) {
     long copied_size = 0;
     int i;
 
-    /* Procházení přímých odkazů */
+    int n = fs->sb->datablock_size / sizeof(int32_t);
+    int k = DIRECT_LINKS_COUNT + n + n * n;
+
+    // Procházení přímých odkazů
+    for(i = 0; i < k && copied_size < size; i++) {
+        fread(buf, fs->sb->datablock_size, 1, source_file);
+        int datablock = fill_datablock(fs, buf);
+        if (datablock == 0) {
+            //Chyba
+            break;
+        }
+        set_datablock_id(fs, &inode, i, datablock);
+        copied_size += fs->sb->datablock_size;
+    }
+
+    printf("Hello\n");
+    (&inode)->file_size = size;
+
+    set_file_inode_position(fs, inode_id);
+    fwrite(&inode, sizeof(struct pseudo_inode), 1, fs->file);
+
+    set_directory_item(fs, fs->current_folder, inode_id, path2);
+    fclose(source_file);
+
+    printf("Soubor vlozen\n");
+
+    fflush(fs->file);
+}
+
+/*
+int create_file(file_system *fs, char *path1, char *path2) {
+    if(!fs || !path1 || !path2) {
+        return 0;
+    }
+
+    FILE *source_file = fopen(path1, "r");
+    char buf[fs->sb->datablock_size];
+
+    if(!source_file) {
+        return 0;
+    }
+
+    int inode_id = get_free_inode_id(fs);
+
+    if(inode_id == 0) {
+        return 0;
+    }
+
+    struct pseudo_inode inode = {};
+    (&inode)->isDirectory = false;
+    (&inode)->nodeid = inode_id;
+    (&inode)->references = 0;
+
+    fseek(source_file, 0, SEEK_END);
+    long size = ftell(source_file);
+    fseek(source_file, 0, SEEK_SET);
+
+    printf("SIZE = %ld\n", size);
+    long copied_size = 0;
+    int i;
+
+    // Procházení přímých odkazů
     for(i = 0; i < DIRECT_LINKS_COUNT && copied_size < size; i++) {
         fread(buf, fs->sb->datablock_size, 1, source_file);
         printf("OBSAH_PRE: \n %s\n\n", buf);
@@ -274,7 +334,7 @@ int create_file(file_system *fs, char *path1, char *path2) {
         copied_size += fs->sb->datablock_size;
     }
 
-    /* Procházení nepřímých odkazů 1. řádu */
+    // Procházení nepřímých odkazů 1. řádu
     printf("Hello\n");
     if(copied_size < size) {
         printf("Hello2\n");
@@ -363,3 +423,4 @@ int create_file(file_system *fs, char *path1, char *path2) {
 
     fflush(fs->file);
 }
+*/
