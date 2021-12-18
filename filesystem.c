@@ -215,11 +215,11 @@ int fill_datablock(file_system *fs, char *data) {
     if(id == 0) {
         return 0;
     }
-    printf("OBSAH: \n");
+    //printf("OBSAH: \n");
 
-    printf("%s\n\n", data);
+    //printf("%s\n\n", data);
 
-    printf("Novy datablock: %i\n", id);
+    //printf("Novy datablock: %i\n", id);
 
     set_file_datablock_position(fs, id);
     fwrite(data, fs->sb->datablock_size, 1, fs->file);
@@ -228,8 +228,8 @@ int fill_datablock(file_system *fs, char *data) {
     return id;
 }
 
-int create_file(file_system *fs, char *path1, char *path2) {
-    if(!fs || !path1 || !path2) {
+int create_file(file_system *fs, char *path1, int parent, char *name) {
+    if(!fs || !path1 || !name) {
         return 0;
     }
 
@@ -278,9 +278,10 @@ int create_file(file_system *fs, char *path1, char *path2) {
     (&inode)->file_size = size;
 
     set_file_inode_position(fs, inode_id);
+    printf("PRVNI DATABLOCK: %i\n", (&inode)->direct[0]);
     fwrite(&inode, sizeof(struct pseudo_inode), 1, fs->file);
 
-    set_directory_item(fs, fs->current_folder, inode_id, path2);
+    set_directory_item(fs, parent, inode_id, name);
     fclose(source_file);
 
     printf("Soubor vlozen\n");

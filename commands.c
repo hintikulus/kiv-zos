@@ -131,6 +131,7 @@ int cd(file_system *fs, int argc, char **argv) {
     int i;
     linked_list *path;
 
+
     if(argc < 1) {
         printf("Zadej parametr!\n");
         return EXIT_FAILURE;
@@ -233,13 +234,88 @@ int incp(file_system *fs, int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    create_file(fs, argv[0], argv[1]);
+    char *path = argv[1];
+    int path_length = strlen(path);
+    char *file_name = "";
+    int32_t current_directory = fs->current_folder;
+
+    int pos = 0;
+    if(path[path_length - 1] == '/') {
+        path[path_length - 1 ] = '\0';
+        file_name = strrchr(argv[0], '/');
+        if(!file_name) {
+            file_name = argv[0];
+        }
+    } else {
+        file_name = strrchr(path, '/');
+    }
+
+    printf("name: %s\n", file_name);
+    printf("path: %s\n", path);
+
+    int parent = get_inode_by_path(fs, current_directory, path);
+
+    printf("parent: %i\n", parent);
+
+
+
+    create_file(fs, argv[0], parent, file_name);
 
     return EXIT_SUCCESS;
 }
 
 int outcp(file_system *fs, int argc, char **argv) {
 
+    if(argc < 2) {
+        return EXIT_FAILURE;
+    }
+
+    int file = get_inode_by_path(fs, fs->current_folder, argv[0]);
+    printf("FILE: %i\n", file);
+    struct pseudo_inode inode = { 0 };
+    load_inode(fs, file, &inode);
+
+    if((&inode)->isDirectory) {
+        printf("SOUBOR JE SLOZKA\n");
+        return EXIT_FAILURE;
+    }
+
+    printf("SIZE: %li\n", (&inode)->file_size);
+
+    long size = (&inode)->file_size;
+
+    FILE *dest_file = fopen(argv[1], "w");
+
+    int n = fs->sb->datablock_size / sizeof(int32_t);
+    int k = DIRECT_LINKS_COUNT + n + n * n;
+
+    printf("PRVNI DATABLOCK: %i\n", (&inode)->direct[0]);
+
+    char buf[fs->sb->datablock_size];
+    int i = 0;
+    printf("i: %i, k: %i, size: %li\n", i, k, size);
+    for(i = 0; i < k && size > 0; i++) {
+        int datablock_id = get_datablock_id(fs, &inode, i);
+        printf("Datablock: %i\n", datablock_id);
+        if(datablock_id == 0) {
+            break;
+        }
+
+        printf("%i. cteni\n", i);
+
+        set_file_datablock_position(fs, datablock_id);
+        if(size <= fs->sb->datablock_size) {
+            fread(buf, size, 1, fs->file);
+            fwrite(buf, size, 1, dest_file);
+        } else {
+            fread(buf, fs->sb->datablock_size, 1, fs->file);
+            fwrite(buf, fs->sb->datablock_size, 1, dest_file);
+            size -= fs->sb->datablock_size;
+        }
+
+    }
+
+    fclose(dest_file);
 
     return EXIT_SUCCESS;
 }

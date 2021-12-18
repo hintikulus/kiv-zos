@@ -105,4 +105,6 @@ int32_t get_datablock_id(file_system *fs, struct pseudo_inode *inode, int32_t da
 
 int set_datablock_id(file_system *fs, struct pseudo_inode *inode, int32_t datablock_id, int32_t datablock_address);
 
+int load_inode(file_system *fs, int32_t inode_id, struct pseudo_inode *inode);
+
 #endif //SP_INODE_H

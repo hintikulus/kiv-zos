@@ -500,7 +500,10 @@ int set_datablock_id(file_system *fs, struct pseudo_inode *inode, int32_t databl
     int n = fs->sb->datablock_size / sizeof(int32_t);
 
     if(datablock_id <= DIRECT_LINKS_COUNT) {
-        return inode->direct[datablock_id];
+        //return inode->direct[datablock_id];
+
+        inode->direct[datablock_id] = datablock_address;
+        return EXIT_SUCCESS;
     }
     datablock_id -= DIRECT_LINKS_COUNT;
     if(datablock_id <= n) {
@@ -602,5 +605,11 @@ int free_datablock(file_system *fs, int32_t datablock_id) {
     fseek(fs->file, fs->sb->bitmap_start_address + datablock_id/8, SEEK_SET);
     fwrite(&bitmap, sizeof(char), 1, fs->file);
 
+    return EXIT_SUCCESS;
+}
+
+int load_inode(file_system *fs, int32_t inode_id, struct pseudo_inode *inode) {
+    set_file_inode_position(fs, inode_id);
+    fread(inode, sizeof(struct pseudo_inode), 1, fs->file);
     return EXIT_SUCCESS;
 }
