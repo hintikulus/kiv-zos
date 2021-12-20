@@ -121,6 +121,56 @@ int ls(file_system *fs, int argc, char **argv) {
 
 int cat(file_system *fs, int argc, char **argv) {
 
+    if (argc < 1) {
+        printf("PATH NOT EXISTS\n");
+        return EXIT_FAILURE;
+    }
+
+    int file = get_inode_by_path(fs, fs->current_folder, argv[0]);
+
+    if(file <= 0) {
+        printf("FILE NOT FOUND\n");
+        return EXIT_FAILURE;
+    }
+
+    struct pseudo_inode inode = { 0 };
+    load_inode(fs, file, &inode);
+
+    if(inode.isDirectory) {
+        printf("FILE IS DIRECTORY\n");
+        return EXIT_FAILURE;
+    }
+
+    int n = fs->sb->datablock_size / sizeof(int32_t);
+    int k = DIRECT_LINKS_COUNT + n + n * n;
+    int i;
+    char buf[fs->sb->datablock_size + 1];
+    buf[fs->sb->datablock_size] = '\0';
+
+    long size = inode.file_size;
+    long printed = 0;
+
+    for(i = 0; i < k; i++) {
+        long read;
+        int datablock_id = get_datablock_id(fs, &inode, i);
+        if(datablock_id == 0) break;
+
+        if(size - printed >= fs->sb->datablock_size) {
+            read = fs->sb->datablock_size;
+        } else {
+            read = size - printed;
+        }
+        memset(buf, 0, fs->sb->datablock_size);
+        set_file_datablock_position(fs, datablock_id);
+        fread(buf, read, 1, fs->file);
+        buf[read] = '\0';
+        printf("\n-------------------------------------------------\n");
+        printf("%i %i\n", i, datablock_id);
+        printf("\n-------------------------------------------------\n");
+        printf("%s", buf);
+    }
+    printf("\nEND OF FILE");
+    printf("\n");
 
     return EXIT_SUCCESS;
 }
@@ -247,13 +297,19 @@ int incp(file_system *fs, int argc, char **argv) {
             file_name = argv[0];
         }
     } else {
-        file_name = strrchr(path, '/');
+        file_name = strrchr(path, '/') + 1;
+        path[path_length - strlen(file_name) - 1] = '\0';
     }
 
     printf("name: %s\n", file_name);
     printf("path: %s\n", path);
 
     int parent = get_inode_by_path(fs, current_directory, path);
+
+    if(get_inode_by_path(fs, parent, file_name) > 0) {
+        printf("FILE EXISTS\n");
+        return EXIT_FAILURE;
+    }
 
     printf("parent: %i\n", parent);
 

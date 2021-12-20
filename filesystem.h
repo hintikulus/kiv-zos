@@ -26,7 +26,7 @@ int file_system_close(file_system *fs0);
 
 int print_folder_content(file_system *fs, int32_t folder);
 
-int fill_datablock(file_system *fs, char *data);
+int fill_datablock(file_system *fs, char *data, long size);
 
 int create_file(file_system *fs, char *path1, int parent, char *name);
 

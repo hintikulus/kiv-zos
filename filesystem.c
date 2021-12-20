@@ -197,9 +197,9 @@ int print_folder_content(file_system *fs, int32_t folder) {
                 fread(&file_inode, sizeof(struct pseudo_inode), 1, fs->file);
 
                 if(file_inode.isDirectory) {
-                    printf("+ %s\n", (&items[j])->item_name);
+                    printf("+ %s (%i)\n", (&items[j])->item_name, (&items[j])->inode);
                 } else {
-                    printf("- %s\n", (&items[j])->item_name);
+                    printf("- %s (%i)\n", (&items[j])->item_name, (&items[j])->inode);
                 }
             }
         }
@@ -209,7 +209,7 @@ int print_folder_content(file_system *fs, int32_t folder) {
     return EXIT_SUCCESS;
 }
 
-int fill_datablock(file_system *fs, char *data) {
+int fill_datablock(file_system *fs, char *data, long size) {
     int id = get_free_datablock_id(fs);
 
     if(id == 0) {
@@ -222,7 +222,7 @@ int fill_datablock(file_system *fs, char *data) {
     //printf("Novy datablock: %i\n", id);
 
     set_file_datablock_position(fs, id);
-    fwrite(data, fs->sb->datablock_size, 1, fs->file);
+    fwrite(data, size, 1, fs->file);
     fflush(fs->file);
 
     return id;
@@ -264,8 +264,16 @@ int create_file(file_system *fs, char *path1, int parent, char *name) {
 
     // Procházení přímých odkazů
     for(i = 0; i < k && copied_size < size; i++) {
-        fread(buf, fs->sb->datablock_size, 1, source_file);
-        int datablock = fill_datablock(fs, buf);
+        long read_size;
+
+        if(size - copied_size >= fs->sb->datablock_size) {
+            read_size = fs->sb->datablock_size;
+        } else {
+            read_size = size - copied_size;
+        }
+
+        fread(buf, read_size, 1, source_file);
+        int datablock = fill_datablock(fs, buf, read_size);
         if (datablock == 0) {
             //Chyba
             break;
