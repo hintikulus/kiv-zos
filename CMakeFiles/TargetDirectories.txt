@@ -1,3 +1,0 @@
-/home/hintik/Plocha/zos/sp/CMakeFiles/rebuild_cache.dir
-/home/hintik/Plocha/zos/sp/CMakeFiles/edit_cache.dir
-/home/hintik/Plocha/zos/sp/CMakeFiles/sp.dir

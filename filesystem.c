@@ -1,97 +1,88 @@
 #include "filesystem.h"
 
+/**
+ * Function to open filesystem
+ * @param file_name path to file with filesystem
+ * @return filesystem structure
+ */
 file_system *file_system_open(char *file_name) {
-    file_system *FS = NULL;
+    file_system *fs = NULL;
 
     if(!file_name) {
         return NULL;
     }
 
-    FS = (file_system *) malloc(sizeof(file_system));
-
-    if(!FS) {
+    FILE *file = fopen(file_name, "r+");
+    if(!file) {
         return NULL;
     }
 
-    //{ file_name, fopen(file_name, "wb+") };
+    fs = (file_system *) malloc(sizeof(file_system));
+
+    if(!fs) {
+        fclose(file);
+        return NULL;
+    }
 
     linked_list *path = linked_list_create();
 
     if(!path) {
-        free(FS);
+        free(fs);
+        fclose(file);
         return NULL;
     }
 
-    //memcpy(sb, &sb_str, sizeof(struct superblock));
-
-    //if(!sb) {
-    //  free(FS);
-    //  return NULL;
-    //}
-
-    FILE *file = fopen(file_name, "wb+");
-
-    if(!file) {
-        linked_list_free(&path);
-    }
-
-    FS->current_folder = 1;
-    FS->file_name = file_name;
-    FS->file = file;
-    FS->sb = NULL;
-    FS->path = path;
-
-    return FS;
-}
-
-int file_system_format(file_system *fs, int size) {
-    int i;
-    char nula[1] = { 0 };
-
-    if(!fs || !fs->file) {
-        return EXIT_FAILURE;
-    }
-
-    //nula = (char *) malloc(sizeof(char));
-    //nula[0] = '\0';
-
-    //struct superblock sb = {};
-    //memset(sb, '\0', sizeof(struct superblock));
-
-    printf("Formatuji %ld\n", sizeof(*nula));
-
-    //struct superblock sb = {};
-    //fill_default_sb(fs->sb);
-
-    nula[0] = '\0';
-    fseek(fs->file, 0, SEEK_SET);
-    for(i = 0; i < size; i++) {
-        fwrite(nula, sizeof(char), 1, fs->file);
-    }
-
-    //free(nula);
-
-    printf("Naplňuji superblock: \n");
     struct superblock *sb = (struct superblock *) malloc(sizeof(struct superblock));
 
-    if(sb == NULL) {
-        return EXIT_FAILURE;
+    if(!sb) {
+        linked_list_free(&path);
+        free(fs);
+        fclose(file);
+        return NULL;
     }
 
-    fill_default_sb(sb);
-    fill_superblock(sb, size, 4*1024);
+    fseek(file, 0, SEEK_SET);
+    fread(sb, sizeof(struct superblock), 1, file);
+
+    fs->current_folder = 1;
+    fs->file_name = file_name;
+    fs->file = file;
     fs->sb = sb;
+    fs->path = path;
+    return fs;
+}
 
-    printf("Výsledky formátování: \n");
-    printf("Počet inodů: %d\n", fs->sb->inode_count);
-    printf("Počet dat.blocků: %d\n", fs->sb->datablock_count);
+/**
+ * Function to format filesystem to entered size
+ * @param path path to file
+ * @param size size of filesystem in bytes
+ * @return filesystem structure
+ */
+file_system *file_system_format(char *path, int size) {
+    int i;
+    char zero[1] = { 0 };
 
-    //fs->sb = &sb;
-    write_superblock(fs, fs->sb);
+    FILE *file = fopen(path, "wb+");
 
+    if(!file) {
+        return NULL;
+    }
 
-    int inode_bitmap_size = (fs->sb)->bitmap_start_address - (fs->sb)->bitmapi_start_address;
-    int data_bitmap_size = (fs->sb)->inode_start_address - (fs->sb)->bitmap_start_address;
+    zero[0] = '\0';
+    fseek(file, 0, SEEK_SET);
+    for(i = 0; i < size; i++) {
+        fwrite(zero, sizeof(char), 1, file);
+    }
+
+    struct superblock sb = {};
+
+    fill_superblock(&sb, size, DATABLOCK_SIZE);
+
+    fseek(file, 0, SEEK_SET);
+    write_superblock(file, &sb);
+
+    int inode_bitmap_size = (&sb)->bitmap_start_address - (&sb)->bitmapi_start_address;
+    int data_bitmap_size = (&sb)->inode_start_address - (&sb)->bitmap_start_address;
 
     u_char inode_bitmap[inode_bitmap_size];
     u_char data_bitmap[data_bitmap_size];
@@ -99,76 +90,53 @@ int file_system_format(file_system *fs, int size) {
     memset(inode_bitmap, 0, inode_bitmap_size * sizeof(u_char));
     memset(data_bitmap, 0, data_bitmap_size * sizeof(u_char));
 
-    printf("Velikost: %ld\n", sizeof(inode_bitmap));
+    fwrite(inode_bitmap, sizeof(u_char), inode_bitmap_size, file);
+    fwrite(data_bitmap, sizeof(u_char), data_bitmap_size, file);
 
-    printf("zapisuji bitmapy\n");
-    fwrite(inode_bitmap, sizeof(u_char), inode_bitmap_size, fs->file);
-    fwrite(data_bitmap, sizeof(u_char), data_bitmap_size, fs->file);
-    //u_char inode_bitmap[inode_bitmap_size] = { 0 };
-    //u_char data_bitmap[data_bitmap_size] = { 0 };
-    printf("konec zapisovani bitmap\n");
+    fflush(file);
+    fclose(file);
 
-    printf("halo?\n");
-    create_root_directory(fs);
+    file_system *fs = file_system_open(path);
 
+    if(fs) {
+        create_root_directory(fs);
+    }
+    return fs;
+}
 
-
-    printf("Tak tady?\n");
-    create_directory(fs, 1, "homes");
-    create_directory(fs, 1, "etc");
-    create_directory(fs, 1, "var");
-    create_directory(fs, 2, "hintik");
-    create_directory(fs, 2, "petr");
-    create_directory(fs, 6, "videa");
-    create_directory(fs, 2, "hintik");
-
-    fs->current_folder = 1;
-
-    //get_inode_by_path(fs, 1, "/file/obrazky/dovolena/");
-    //get_inode_by_path(fs, 1, "file/obrazky/dovolena/");
-    //get_inode_by_path(fs, 1, "/file/obrazky/dovolena");
-    //get_inode_by_path(fs, 1, "file/obrazky/dovolena");
-
-    fflush(fs->file);
-
-    printf("Velikost directory_item: %d\n", sizeof(struct directory_item));
-    printf("Velikost dat. bloku: %d\n", fs->sb->datablock_size);
-    printf("Velikost pocet itemů v dat. bloku: %d\n", fs->sb->datablock_size/sizeof(struct directory_item));
-
+/**
+ * Structure to write superblock to file
+ * @param file opened file descriptor
+ * @param sb pointer to superblock structure
+ * @return
+ */
+int write_superblock(FILE *file, struct superblock *sb) {
+    fseek(file, 0, SEEK_SET);
+    fwrite(sb, sizeof(*sb), 1, file);
     return EXIT_SUCCESS;
 }
 
-int file_system_create(FILE file, int size, int block_size) {
-
-    return EXIT_SUCCESS;
-}
-
-
-int write_superblock(file_system *fs, struct superblock *sb) {
-
-    fseek(fs->file, 0, SEEK_SET);
-
-    printf("Size:%ld\n", sizeof(*sb));
-    fwrite(sb, sizeof(*sb), 1, fs->file);
-
-    return EXIT_SUCCESS;
-}
-
-int load_superblock(file_system *fs) {
-    fseek(fs->file, 0, SEEK_SET);
-
-    fread(fs->sb, sizeof(struct superblock), 1, fs->file);
-    return EXIT_SUCCESS;
-}
-
+/**
+ * Function to close filesystem
+ * @param fs filesystem structure
+ * @return information about success of operation
+ */
 int file_system_close(file_system *fs) {
     free(fs->sb);
     linked_list_free(&fs->path);
-    fclose(fs->file);
+    if(fs->file) {
+        fclose(fs->file);
+    }
     free(fs);
     return EXIT_SUCCESS;
 }
 
+/**
+ * Function to print content of folder
+ * @param fs filesystem structure
+ * @param folder folder identifier
+ * @return information about success
+ */
 int print_folder_content(file_system *fs, int32_t folder) {
     struct pseudo_inode inode, file_inode;
     int i, j;
@@ -183,43 +151,53 @@ int print_folder_content(file_system *fs, int32_t folder) {
         return EXIT_FAILURE;
     }
 
-    for(i = 0; i < DIRECT_LINKS_COUNT; i++) {
-        if(inode.direct[i] == 0) {
-            continue;
-        }
+    int n = fs->sb->datablock_size / sizeof(int32_t);
+    int k = DIRECT_LINKS_COUNT + n + n * n;
+    int counter = 0;
+    int counter_db = ceil(inode.file_size / fs->sb->datablock_size);
 
-        set_file_datablock_position(fs, inode.direct[i]);
-        fread(items, sizeof(items), 1, fs->file);
+    for(i = 0; i < k; i++) {
+        int id = get_datablock_id(fs, &inode, i);
+        if(id != 0) {
+            set_file_datablock_position(fs, id);
+            fread(items, sizeof(items), 1, fs->file);
 
-        for(j = 0; j < item_count; j++) {
-            if(items[j].inode != 0) {
-                set_file_inode_position(fs, items[j].inode);
-                fread(&file_inode, sizeof(struct pseudo_inode), 1, fs->file);
+            for(j = 0; j < item_count; j++) {
+                if(items[j].inode != 0) {
+                    set_file_inode_position(fs, items[j].inode);
+                    fread(&file_inode, sizeof(struct pseudo_inode), 1, fs->file);
 
-                if(file_inode.isDirectory) {
-                    printf("+ %s (%i)\n", (&items[j])->item_name, (&items[j])->inode);
-                } else {
-                    printf("- %s (%i)\n", (&items[j])->item_name, (&items[j])->inode);
+                    if(file_inode.isDirectory) {
+                        printf("+ %s\n", (&items[j])->item_name);
+                    } else {
+                        printf("- %s\n", (&items[j])->item_name);
+                    }
                 }
             }
-        }
+            counter++;
 
+            if(counter == counter_db) {
+                break;
+            }
+        }
     }
 
     return EXIT_SUCCESS;
 }
 
+/**
+ * Function to fill datablock with data
+ * @param fs filesystem structure
+ * @param data data array
+ * @param size data size
+ * @return information about operation success
+ */
 int fill_datablock(file_system *fs, char *data, long size) {
     int id = get_free_datablock_id(fs);
 
     if(id == 0) {
         return 0;
     }
-    //printf("OBSAH: \n");
-
-    //printf("%s\n\n", data);
-
-    //printf("Novy datablock: %i\n", id);
 
     set_file_datablock_position(fs, id);
     fwrite(data, size, 1, fs->file);
@@ -228,12 +206,19 @@ int fill_datablock(file_system *fs, char *data, long size) {
     return id;
 }
 
-int create_file(file_system *fs, char *path1, int parent, char *name) {
+/**
+ * Function to create file in filesystem from existing file
+ * @param fs filesystem structure
+ * @param source_file source file
+ * @param path1 path to file
+ * @param parent parent folder of the new file
+ * @param name name of creating file
+ * @return information of the operation success
+ */
+int create_file(file_system *fs, FILE *source_file, char *path1, int parent, char *name) {
     if(!fs || !path1 || !name) {
         return 0;
     }
-
-    FILE *source_file = fopen(path1, "r");
     char buf[fs->sb->datablock_size];
 
     if(!source_file) {
@@ -249,20 +234,18 @@ int create_file(file_system *fs, char *path1, int parent, char *name) {
     struct pseudo_inode inode = {};
     (&inode)->isDirectory = false;
     (&inode)->nodeid = inode_id;
-    (&inode)->references = 0;
+    (&inode)->references = 1;
 
     fseek(source_file, 0, SEEK_END);
     long size = ftell(source_file);
     fseek(source_file, 0, SEEK_SET);
 
-    printf("SIZE = %ld\n", size);
     long copied_size = 0;
     int i;
 
     int n = fs->sb->datablock_size / sizeof(int32_t);
     int k = DIRECT_LINKS_COUNT + n + n * n;
 
-    // Procházení přímých odkazů
     for(i = 0; i < k && copied_size < size; i++) {
         long read_size;
 
@@ -279,157 +262,40 @@ int create_file(file_system *fs, char *path1, int parent, char *name) {
             break;
         }
         set_datablock_id(fs, &inode, i, datablock);
+        int id = get_datablock_id(fs, &inode, i);
         copied_size += fs->sb->datablock_size;
     }
 
-    printf("Hello\n");
     (&inode)->file_size = size;
 
     set_file_inode_position(fs, inode_id);
-    printf("PRVNI DATABLOCK: %i\n", (&inode)->direct[0]);
     fwrite(&inode, sizeof(struct pseudo_inode), 1, fs->file);
 
     set_directory_item(fs, parent, inode_id, name);
     fclose(source_file);
 
-    printf("Soubor vlozen\n");
-
     fflush(fs->file);
 }
 
-/*
-int create_file(file_system *fs, char *path1, char *path2) {
-    if(!fs || !path1 || !path2) {
-        return 0;
+/**
+ * Function to get filename from entered path
+ * @param path filesystem path
+ * @return pointer to position on path where starts file name
+ */
+char *get_name_from_path(char *path) {
+
+    int length = strlen(path);
+    if(path[length - 1] == '/') {
+        path[length - 1] = '\0';
     }
 
-    FILE *source_file = fopen(path1, "r");
-    char buf[fs->sb->datablock_size];
-
-    if(!source_file) {
-        return 0;
+    char *name = strrchr(path, '/');
+    if(name) {
+        return name + 1;
+    } else {
+        return path;
     }
 
-    int inode_id = get_free_inode_id(fs);
 
-    if(inode_id == 0) {
-        return 0;
-    }
-
-    struct pseudo_inode inode = {};
-    (&inode)->isDirectory = false;
-    (&inode)->nodeid = inode_id;
-    (&inode)->references = 0;
-
-    fseek(source_file, 0, SEEK_END);
-    long size = ftell(source_file);
-    fseek(source_file, 0, SEEK_SET);
-
-    printf("SIZE = %ld\n", size);
-    long copied_size = 0;
-    int i;
-
-    // Procházení přímých odkazů
-    for(i = 0; i < DIRECT_LINKS_COUNT && copied_size < size; i++) {
-        fread(buf, fs->sb->datablock_size, 1, source_file);
-        printf("OBSAH_PRE: \n %s\n\n", buf);
-        int datablock = fill_datablock(fs, buf);
-        if (datablock == 0) {
-            //Chyba
-            break;
-        }
-
-        (&inode)->direct[i] = datablock;
-        copied_size += fs->sb->datablock_size;
-    }
-
-    // Procházení nepřímých odkazů 1. řádu
-    printf("Hello\n");
-    if(copied_size < size) {
-        printf("Hello2\n");
-        int indirect = get_free_datablock_id(fs);
-        if (indirect == 0) {
-            return 0;
-        }
-
-        int array_size = fs->sb->datablock_size / sizeof(int32_t);
-        int32_t* array_ptrs = malloc(fs->sb->datablock_size);
-        if(!array_ptrs) {
-            return 0;
-        }
-        int j = 0;
-
-        while(array_size > j && copied_size < size) {
-            fread(buf, fs->sb->datablock_size, 1, source_file);
-            int datablock = fill_datablock(fs, buf);
-            if (datablock == 0) {
-                //Chyba
-                break;
-            }
-
-            copied_size += fs->sb->datablock_size;
-            array_ptrs[j] = datablock;
-            j++;
-        }
-
-        set_file_datablock_position(fs, indirect);
-        fwrite(array_ptrs, fs->sb->datablock_size, 1, fs->file);
-        (&inode)->indirect[0] = indirect;
-
-
-        if(copied_size < size) {
-            int indirect2 = get_free_datablock_id(fs);
-            memset(array_ptrs, 0, fs->sb->datablock_size);
-            int32_t *indirect_ptrs = malloc(fs->sb->datablock_size);
-            if(!indirect_ptrs) {
-                free(array_ptrs);
-                return 0;
-            }
-            for(i = 0; i < array_size && copied_size < size; i++) {
-                j = 0;
-                memset(indirect_ptrs, 0, fs->sb->datablock_size);
-                indirect = get_free_datablock_id(fs);
-
-                while(array_size > j && copied_size < size) {
-                    fread(buf, fs->sb->datablock_size, 1, source_file);
-                    int datablock = fill_datablock(fs, buf);
-                    if (datablock == 0) {
-                        //Chyba
-                        break;
-                    }
-
-                    copied_size += fs->sb->datablock_size;
-                    indirect_ptrs[j] = datablock;
-                    j++;
-                }
-
-                set_file_datablock_position(fs, indirect);
-                fwrite(indirect_ptrs, fs->sb->datablock_size, 1, fs->file);
-                array_ptrs[i] = indirect;
-
-
-            }
-
-            set_file_datablock_position(fs, indirect2);
-            fwrite(array_ptrs, fs->sb->datablock_size, 1, fs->file);
-            (&inode)->indirect[1] = indirect2;
-            free(indirect_ptrs);
-        }
-
-        free(array_ptrs);
-    }
-
-    printf("Hello\n");
-    (&inode)->file_size = size;
-
-    set_file_inode_position(fs, inode_id);
-    fwrite(&inode, sizeof(struct pseudo_inode), 1, fs->file);
-
-    set_directory_item(fs, fs->current_folder, inode_id, path2);
-    fclose(source_file);
-
-    printf("Soubor vlozen\n");
-
-    fflush(fs->file);
 }
-*/
+

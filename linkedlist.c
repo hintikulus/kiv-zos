@@ -1,5 +1,12 @@
+/**
+ * Implementation of linked list
+ */
 #include "linkedlist.h"
 
+/**
+ * Function to create linked list
+ * @return linkedlist structure
+ */
 linked_list *linked_list_create() {
     linked_list *list = NULL;
 
@@ -16,6 +23,12 @@ linked_list *linked_list_create() {
     return list;
 }
 
+/**
+ * Function to add item to linked list
+ * @param ls linkedlist structure
+ * @param name item name
+ * @return information about operation success
+ */
 int linked_list_add(linked_list *ls, char *name) {
     struct linked_list_item *item = NULL;
     int name_len;
@@ -62,11 +75,11 @@ int linked_list_add(linked_list *ls, char *name) {
     return EXIT_SUCCESS;
 }
 
-int linked_list_add_to_start(linked_list *ls, char *name) {
-
-    return EXIT_SUCCESS;
-}
-
+/**
+ * Function to remove last item in linkedlist
+ * @param ls linkedlist structure
+ * @return information about operation success
+ */
 int linked_list_remove_last(linked_list *ls) {
     struct linked_list_item *item = NULL;
 
@@ -80,15 +93,22 @@ int linked_list_remove_last(linked_list *ls) {
 
     item = ls->last;
 
-    if(ls->last->previous) {
-        ls->last->previous->next = NULL;
+    if(!item) {
+        return EXIT_FAILURE;
+    }
+
+    if(item->previous) {
+        item->previous->next = NULL;
         ls->last = item->previous;
+    } else {
+        ls->last = NULL;
     }
 
     ls->size--;
 
     if(ls->size == 0) {
         ls->first = NULL;
+        ls->last = NULL;
     }
 
     free(item->name);
@@ -97,6 +117,11 @@ int linked_list_remove_last(linked_list *ls) {
     return EXIT_SUCCESS;
 }
 
+/**
+ * Function to free allocated linked list
+ * @param ls pointer to linkedlist structure
+ * @return infromation about operation success
+ */
 int linked_list_free(linked_list **ls) {
     struct linked_list_item *item;
 
