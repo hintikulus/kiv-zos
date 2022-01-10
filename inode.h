@@ -26,85 +26,254 @@
 #define DIRECT_LINKS_COUNT 5
 #define INDIRECT_LINKS_COUNT 2
 
+/**
+ * Structure of superblock
+ */
 struct superblock {
-    char signature[9];              /*login autora FS*/
-    char volume_descriptor[251];    /*popis vygenerovaného FS*/
-    int32_t disk_size;              /*celkova velikost VFS*/
-    int32_t datablock_size;           /*velikost clusteru*/
-    int32_t datablock_count;          /*pocet clusteru*/
+    /* author's login */
+    char signature[9];
+    /* volume information */
+    char volume_descriptor[251];
+    /* datablock size */
+    int32_t datablock_size;
+    /* disk size */
+    int32_t disk_size;
+    /* datablock_count */
+    int32_t datablock_count;
+    /* inode_count */
     int32_t inode_count;
-    int32_t bitmapi_start_address;  /*adresa pocatku bitmapy i-uzlů*/
-    int32_t bitmap_start_address;   /*adresa pocatku bitmapy datových bloků*/
-    int32_t inode_start_address;    /*adresa pocatku  i-uzlů*/
-    int32_t data_start_address;     /*adresa pocatku datovych bloku  */
+    /*
+     * adresses of start of each block
+     */
+    int32_t bitmapi_start_address;
+    int32_t bitmap_start_address;
+    int32_t inode_start_address;
+    int32_t data_start_address;
 };
 
-
+/**
+ * Structure of inode
+ */
 struct pseudo_inode {
-    int32_t nodeid;                 /*ID i-uzlu, pokud ID = ID_ITEM_FREE, je polozka volna*/
-    bool isDirectory;               /*soubor, nebo adresar*/
-    int8_t references;              /*počet odkazů na i-uzel, používá se pro hardlinky*/
-    long file_size;              /*velikost souboru v bytech*/
-    int32_t direct[DIRECT_LINKS_COUNT];                /* 1. přímý odkaz na datové bloky*/
-    /*int32_t direct2; */               /* 2. přímý odkaz na datové bloky*/
-    /*int32_t direct3; */              /* 3. přímý odkaz na datové bloky*/
-    /*int32_t direct4; */               /* 4. přímý odkaz na datové bloky*/
-    /*int32_t direct5; */             /* 5. přímý odkaz na datové bloky*/
+    /* file identifier */
+    int32_t nodeid;
+    /* is this a file or directory */
+    bool isDirectory;
+    /* number of directory items pointing to this inode */
+    int8_t references;
+    /* size of this file in bytes */
+    long file_size;
+    /* identifiers of direct datatblocks */
+    int32_t direct[DIRECT_LINKS_COUNT];
+    /* identifiers of indirect datablocks */
     int32_t indirect[INDIRECT_LINKS_COUNT];
-    /* int32_t indirect1; */             /* 1. nepřímý odkaz (odkaz - datové bloky)*/
-    /* int32_t indirect2; */              /* 2. nepřímý odkaz (odkaz - odkaz - datové bloky)*/
 };
 
-
+/**
+ * Structure for directory item
+ */
 struct directory_item {
-    int32_t inode;                   /* inode odpovídající souboru*/
-    char item_name[12];              /*8+3 + /0 C/C++ ukoncovaci string znak*/
+    /* inode identifier */
+    int32_t inode;
+    /* file name */
+    char item_name[12];
 };
 
-/* funkce pro predvyplneni struktury sb*/
-
-void fill_default_sb(struct superblock *sb);
-/* funkce pro predvyplneni struktury sb*/
-
+/**
+ * Function to calculate addresses and fill the superblock
+ * @param sb superblock structure
+ * @param size size of filesystem
+ * @param datablock_size size of one datablock
+ */
 void fill_superblock(struct superblock *sb, int32_t size, int32_t datablock_size);
 
-
-
+/**
+ * Function to allocate space for new inode
+ * @param fs filesystem structure
+ * @return inode identifier
+ */
 int get_free_inode_id(file_system *fs);
 
+/**
+ * Function to allocate space for new datablock
+ * @param fs filesystem structure
+ * @return datablock identifier
+ */
 int get_free_datablock_id(file_system *fs);
 
-int create_inode(file_system *fs);
-
-int create_datablock(file_system *fs);
-
+/**
+ * Function to initialize filesystem root directory
+ * @param fs filesystem structure
+ * @return information about operation success
+ */
 int create_root_directory(file_system *fs);
 
+/**
+ * Function to create directory in certain folder
+ * @param fs filesystem structure
+ * @param parent folder inode identifier
+ * @param name filename
+ * @return information about operation success
+ */
 int create_directory(file_system *fs, int32_t parent, char *name);
+
+/**
+ * Function to find free directory item in certain datablock
+ * @param fs filesystem structure
+ * @param datablock datablock structure
+ * @return position of free directory item
+ */
 int find_free_directory_item_in_datablock(file_system *fs, int32_t datablock);
 
+/**
+ * Function to find free directory item in certain folder
+ * @param fs filesystem structure
+ * @param folder folder inode identifier
+ * @param datablock_number pointer to save datablock identifier
+ * @return position of free directory item in datablock
+ */
 int find_free_directory_item_in_folder(file_system *fs, int32_t folder, int32_t *datablock_number);
 
+/**
+ * Function to set pointer in file to start of entered inode
+ * @param fs filesystem structure
+ * @param inode_id inode identifier
+ * @return information about operation success
+ */
 int set_file_inode_position(file_system *fs, int32_t inode_id);
+
+/**
+ * Function to set pointer in file to start of entered datablock
+ * @param fs filesystem structure
+ * @param datablock_id datablock identifier
+ * @return information about operation success
+ */
 int set_file_datablock_position(file_system *fs, int32_t datablock_id);
+
+/**
+ * Function to find directory item in datablock
+ * @param fs filesystem structure
+ * @param datablock datablock identifier
+ * @param name file name
+ * @return inode identifier of found file
+ */
 int find_directory_item_in_datablock(file_system *fs, int32_t datablock, char *name);
 
-int get_directory_item_inode(file_system *fs, int32_t parent, char* name);
 
-int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path);
+/**
+ * Function to get new datablock for inode
+ * @param fs filesystem structure
+ * @param inode_id inode identifier
+ * @return new datablock identifier
+ */
+int get_new_inode_datablock(file_system *fs, int inode_id);
 
-int free_inode(file_system *fs, int32_t inode_id);
+/**
+ * Function to get number of inode from entered filesystem path
+ * @param fs filesystem structure
+ * @param parent inode identifier from which the path starts
+ * @param path filesystem path
+ * @param offset where we should stop finding
+ * @return identifier to targeting inode
+ */
+int32_t get_inode_by_path(file_system *fs, int32_t parent, char *path, int offset);
 
-int free_datablock(file_system *fs, int32_t datablock_id);
-
+/**
+ * Function to find directory item in filder
+ * @param fs filesystem structure
+ * @param folder folder inode identifier
+ * @param name file name
+ * @return inode identifier of found file
+ */
 int32_t find_file_in_folder(file_system *fs, int32_t folder, char *name);
 
+/**
+ * Function to set directorey item in folder
+ * @param fs filesystem structure
+ * @param parent folder inode identifier
+ * @param inode inode item identifier
+ * @param name item name
+ * @return information about operation success
+ */
 int set_directory_item(file_system *fs, int32_t parent, int32_t inode, char *name);
 
+/**
+ * Function to translate inode datablock address to filesystem datablock address
+ * @param fs filesystem structure
+ * @param inode inode structure
+ * @param datablock_id datablock inode-address
+ * @return filesystem datablock identifier
+ */
 int32_t get_datablock_id(file_system *fs, struct pseudo_inode *inode, int32_t datablock_id);
 
+/**
+ * Function to assign datablock to inode
+ * @param fs filesystem structure
+ * @param inode inode structure
+ * @param datablock_id inode-address of datablock
+ * @param datablock_address datablock identifier
+ * @return information about operation success
+ */
 int set_datablock_id(file_system *fs, struct pseudo_inode *inode, int32_t datablock_id, int32_t datablock_address);
 
+/**
+ * Function to remove directory item from datablock
+ * @param fs filesystem structure
+ * @param datablock datablock identifier
+ * @param name filename
+ * @return datablock inode-address where directory item was found
+ */
+int unset_directory_item_in_datablock(file_system *fs, int32_t datablock, char *name);
+
+/**
+ * Function to remove directory item from folder
+ * @param fs filesystem structure
+ * @param folder folder inode identifier
+ * @param name file name
+ * @return datablock inode-address where directory item was found
+ */
+int unset_directory_item_in_folder(file_system *fs, int32_t folder, char *name);
+
+/**
+ * Function to remove directory item from given path
+ * @param fs filesystem structure
+ * @param path path to directory item
+ * @return information about operation success
+ */
+int unset_directory_item(file_system *fs, char *path);
+
+/**
+ * Function to deallocate allocated inode
+ * @param fs filesystem structure
+ * @param inode_id inode identifier
+ * @return information about operation success
+ */
+int free_inode(file_system *fs, int32_t inode_id);
+/**
+ * Function to deallocate allocated datablock
+ * @param fs filesystem structure
+ * @param datablock_id datablock identifier
+ * @return information about operation success
+ */
+int free_datablock(file_system *fs, int32_t datablock_id);
+
+
+/**
+ * Function to load inode structure from filesystem
+ * @param fs filesystem structure
+ * @param inode_id inode identifier
+ * @param inode inode structure
+ * @return information about operation success
+ */
 int load_inode(file_system *fs, int32_t inode_id, struct pseudo_inode *inode);
+
+/**
+ * Function to save inode structure to filesystem
+ * @param fs filesystem structure
+ * @param inode_id inode identifier
+ * @param inode inode structure
+ * @return information about operation success
+ */
+int save_inode(file_system *fs, int32_t inode_id, struct pseudo_inode *inode);
 
 #endif //SP_INODE_H
