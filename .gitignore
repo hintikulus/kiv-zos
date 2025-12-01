@@ -11,3 +11,5 @@ CMakeCache.txt
 cmake_install.cmake
 *cbp
 build
+.idea/*
+.vscode/*
